@@ -59,6 +59,29 @@ class database:
             
 
 
+def get_top_regions_by_company(new_dbobj,schema_name,values):
+    try:
+        top_region_by_comp_query=f'''SELECT  TOP 5 afd.country_of_origin as Country_of_Origin, SUM(afd.weight) as Weight_Percentage , afd.company_group 
+                FROM {schema_name}.app_faurecia_data afd  
+                WHERE afd.company_group IN ('{values}')
+                GROUP BY afd.country_of_origin, afd.company_group
+                ORDER BY SUM(afd.weight) DESC '''
+        top_region_by_comp=new_dbobj.read_table(top_region_by_comp_query)
+        top_region_by_comp_data=top_region_by_comp.to_dict('records') 
+        return top_region_by_comp_data
+    except:
+        return None
+
+def get_distinct_company_group_names(new_dbobj,schema_name):
+    try:
+        dist_comp_query=f'''SELECT DISTINCT afd.company_group 
+      FROM {schema_name}.app_faurecia_data afd'''
+        distinct_company_group_df=new_dbobj.read_table(dist_comp_query)
+        distinct_company_group_data=list(distinct_company_group_df['company_group'])
+        return distinct_company_group_data
+    except:
+        return None
+
 
 
 def set_env_var():
@@ -100,10 +123,456 @@ async def supplier_market_analysis():
         main_dict["level_1"]=level_1
         main_dict["level_2"]=level_2
         main_dict["level_3"]=level_3
-        new_dbobj.close_conn_eng
+        new_dbobj.close_conn_eng()
         
         return main_dict
         
     except:
         return None
 
+@app.post("/v1/rfi-rfp/get-project-supplier-details")
+async def get_project_supplier_details(project_id: int = Form(...)):
+    try:
+        resp_dict={}
+        set_env_var()
+        new_dbobj=database(user_name , password , Database_Name , Server_Name)
+        
+        query_project=f'''select  * from {schema_name}.RFI_project
+                where id = {project_id};'''
+
+        project_df=new_dbobj.read_table(query_project)
+        project_df = project_df.fillna(value='null')
+        project_details=project_df.to_dict('records')
+        resp_dict['project_details']=project_details
+        
+        query=f'''select  * from {schema_name}.RFI_suppli_project dt
+        join {schema_name}.Vendors_Data vd on dt.supplier_id=vd.id
+        where project_id = {project_id}'''
+
+        new_df=new_dbobj.read_table(query)
+        new_df = new_df.fillna(value='null')
+        supplier_details=new_df.to_dict('records')
+        resp_dict['supplier_details']=supplier_details
+        resp_dict["message"]= "Data Retrived successfully"
+
+        new_dbobj.close_conn_eng()
+        return resp_dict
+
+    except:
+        return None
+    
+
+@app.post("/v1/competitor-analysis-dashboard/get-filters")
+async def competitor_analysis_dashboard_get_filters():
+    try:
+        filters_dict={}
+        set_env_var()
+        new_dbobj=database(user_name , password , Database_Name , Server_Name)
+        
+        country_query=f'''SELECT DISTINCT
+                        Country_of_Origin
+                      FROM 
+                        {schema_name}.app_faurecia_data
+                      ORDER BY 
+                        Country_of_Origin  
+                        ;'''
+        country_df=new_dbobj.read_table(country_query)
+        country_filters=country_df.to_dict('records')
+        filters_dict['country_filters']=country_filters
+
+        importer_query=f'''SELECT DISTINCT
+                            Importer
+                          FROM 
+                            {schema_name}.app_faurecia_data
+                          ORDER BY 
+                            Importer'''
+
+        importer_df=new_dbobj.read_table(importer_query)
+        importer_filters=importer_df.to_dict('records')
+        filters_dict['importer_filters']=importer_filters
+
+        hs_query=f'''SELECT DISTINCT
+                            HS
+                          FROM 
+                            {schema_name}.app_faurecia_data
+                          ORDER BY 
+                            HS  '''
+        hs_df=new_dbobj.read_table(hs_query)
+        hs_filters=hs_df.to_dict('records')
+        filters_dict['hs_filters']=hs_filters
+
+
+        provider_query= f'''SELECT DISTINCT
+                            Provider
+                          FROM 
+                            {schema_name}.app_faurecia_data
+                          ORDER BY 
+                            Provider  '''
+
+        provider_df=new_dbobj.read_table(provider_query)
+        provider_filters=provider_df.to_dict('records')
+        filters_dict['provider_filters']=provider_filters
+
+        support_type_query=f'''SELECT DISTINCT
+                            Supplier_type
+                          FROM 
+                            {schema_name}.app_faurecia_data'''
+
+        support_type_df=new_dbobj.read_table(support_type_query)
+        support_type_filters=support_type_df.to_dict('records')
+        filters_dict['supporter_type_filters']=support_type_filters
+
+        new_dbobj.close_conn_eng()
+        return filters_dict
+    except:
+        return None
+
+@app.post("/v1/competitor-analysis-dashboard/all-competitors-data")
+async def competitor_analysis_dashboard_all_competitors_data(Supplier_Type :str, Country_of_Origin: str, HS:str, Importer:str):
+    try:
+        set_env_var()
+        Supplier_Type=Supplier_Type[1:-1]
+        Country_of_Origin=Country_of_Origin[1:-1]
+        HS=HS[1:-1]
+        Importer=Importer[1:-1]
+        new_dbobj=database(user_name , password , Database_Name , Server_Name)
+        competitor_analysis_query=f'''SELECT
+                            Provider_State_City,
+                            Port,
+                            Importer_City,
+                            Naics_Code,
+                            Unit_Value_USD,
+                            Importer,
+                            Commercial_Unit,
+                            Port_ID,
+                            Importer_State,
+                            Importer_Address,
+                            HS_Description,
+                            Provider_State_Declared,
+                            Naics_Classification,
+                            Port_State,
+                            Weight,
+                            [Date],
+                            Provider,
+                            Provider_Address,
+                            Product_HS,
+                            Provider_Declared,
+                            Transport_Method,
+                            Customs_Value_USD,
+                            Commercial_Quantity,
+                            row_id,
+                            Country_of_Origin,
+                            HS,
+                            HS_Desc,
+                            [Time],
+                            Supplier_Type
+                          FROM 
+                            {schema_name}.app_faurecia_data'''
+
+        flag=any((Supplier_Type,Country_of_Origin,HS,Importer))
+
+        already_condition_exist=0
+
+        if flag:
+            competitor_analysis_query+=' where'        
+            if Supplier_Type:
+                if already_condition_exist==1:
+                    competitor_analysis_query+=' and '            
+
+                competitor_analysis_query+=' Supplier_Type in ('+str(Supplier_Type)+')'
+                already_condition_exist=1
+
+            if Country_of_Origin:
+                if already_condition_exist==1:
+                    competitor_analysis_query+=' and '            
+
+                competitor_analysis_query+=' Country_of_Origin in ('+str(Country_of_Origin)+')'
+                already_condition_exist=1
+
+            if HS:
+                if already_condition_exist==1:
+                    competitor_analysis_query+=' and '            
+
+                competitor_analysis_query+=' HS in ('+str(HS)+')'
+                already_condition_exist=1
+
+            if Importer:
+                if already_condition_exist==1:
+                    competitor_analysis_query+=' and '            
+
+                competitor_analysis_query+=' Importer in ('+str(Importer)+')'
+                already_condition_exist=1
+
+        competitor_analysis_query+=';'
+
+
+        competitor_df=new_dbobj.read_table(competitor_analysis_query)
+
+        all_competitors_data=competitor_df.to_dict('records')    
+        new_dbobj.close_conn_eng()
+
+        return all_competitors_data
+    except:
+        return None
+
+
+
+
+
+@app.post("/v1/competitor-analysis-dashboard/competitors-weight-distribution")
+async def competitor_analysis_dashboard_all_competitors_data(Supplier_Type :str, Country_of_Origin: str, HS:str, Importer:str):
+    try:
+        return_dict={}
+        set_env_var()
+        Supplier_Type=Supplier_Type[1:-1]
+        Country_of_Origin=Country_of_Origin[1:-1]
+        HS=HS[1:-1]
+        Importer=Importer[1:-1]
+        new_dbobj=database(user_name , password , Database_Name , Server_Name)
+
+        weights_subquery=f''' select
+                        SUM(Weight)
+                      from
+                        {schema_name}.app_faurecia_data'''
+
+
+        flag=any((Supplier_Type,Country_of_Origin,HS,Importer))
+
+        already_condition_exist=0
+        already_condition_exist_outer=0
+
+        if flag:
+            weights_subquery+=' where'        
+            if Supplier_Type:
+                if already_condition_exist==1:
+                    weights_subquery+=' and '            
+
+                weights_subquery+=' Supplier_Type in ('+str(Supplier_Type)+')'
+                already_condition_exist=1
+
+            if Country_of_Origin:
+                if already_condition_exist==1:
+                    weights_subquery+=' and '            
+
+                weights_subquery+=' Country_of_Origin in ('+str(Country_of_Origin)+')'
+                already_condition_exist=1
+
+            if HS:
+                if already_condition_exist==1:
+                    weights_subquery+=' and '            
+
+                weights_subquery+=' HS in ('+str(HS)+')'
+                already_condition_exist=1
+
+            if Importer:
+                if already_condition_exist==1:
+                    weights_subquery+=' and '            
+
+                weights_subquery+=' Importer in ('+str(Importer)+')'
+                already_condition_exist=1
+
+        countriwise_weights=f'''SELECT
+                                          CAST(100 * (SUM(Weight)/(
+                                            {weights_subquery})) AS DECIMAL(12,4)) As Weight_Percentage, 
+                                            Country_of_Origin,
+                                            COUNT(Provider) AS No_Of_Suppliers
+                                          FROM
+                                            {schema_name}.app_faurecia_data'''
+
+        if flag:
+            countriwise_weights+=' where'        
+            if Supplier_Type:
+                if already_condition_exist_outer==1:
+                    countriwise_weights+=' and '            
+
+                countriwise_weights+=' Supplier_Type in ('+str(Supplier_Type)+')'
+                already_condition_exist_outer=1
+
+            if Country_of_Origin:
+                if already_condition_exist_outer==1:
+                    countriwise_weights+=' and '            
+
+                countriwise_weights+=' Country_of_Origin in ('+str(Country_of_Origin)+')'
+                already_condition_exist_outer=1
+
+            if HS:
+                if already_condition_exist_outer==1:
+                    countriwise_weights+=' and '            
+
+                countriwise_weights+=' HS in ('+str(HS)+')'
+                already_condition_exist_outer=1
+
+            if Importer:
+                if already_condition_exist_outer==1:
+                    countriwise_weights+=' and '            
+
+                countriwise_weights+=' Importer in ('+str(Importer)+')'
+                already_condition_exist_outer=1
+
+        countriwise_weights+=''' GROUP BY
+              Country_of_Origin
+            ORDER BY 
+              Weight_Percentage DESC ;'''
+
+        countriwise_weight_df=new_dbobj.read_table(countriwise_weights)
+
+        countriwise_weight_data=countriwise_weight_df.to_dict('records')    
+
+        return_dict['Country_Weight_Distribution']=countriwise_weight_data
+
+        weights_subquery=f''' select
+                        SUM(Weight)
+                      from
+                        {schema_name}.app_faurecia_data'''
+
+        flag=any((Supplier_Type,Country_of_Origin,HS,Importer))
+
+        already_condition_exist=0
+        already_condition_exist_outer=0
+
+        if flag:
+            weights_subquery+=' where'        
+            if Supplier_Type:
+                if already_condition_exist==1:
+                    weights_subquery+=' and '            
+
+                weights_subquery+=' Supplier_Type in ('+str(Supplier_Type)+')'
+                already_condition_exist=1
+
+            if Country_of_Origin:
+                if already_condition_exist==1:
+                    weights_subquery+=' and '            
+
+                weights_subquery+=' Country_of_Origin in ('+str(Country_of_Origin)+')'
+                already_condition_exist=1
+
+            if HS:
+                if already_condition_exist==1:
+                    weights_subquery+=' and '            
+
+                weights_subquery+=' HS in ('+str(HS)+')'
+                already_condition_exist=1
+
+            if Importer:
+                if already_condition_exist==1:
+                    weights_subquery+=' and '            
+
+                weights_subquery+=' Importer in ('+str(Importer)+')'
+                already_condition_exist=1
+
+        countriwise_weights=f'''SELECT
+                                          CAST(100 * (SUM(Weight)/(
+                                            {weights_subquery})) AS DECIMAL(12,4)) As Weight_Percentage, 
+                                            Country_of_Origin,
+                                            COUNT(Provider) AS No_Of_Suppliers
+                                          FROM
+                                            {schema_name}.app_faurecia_data'''
+
+        if flag:
+            countriwise_weights+=' where'        
+            if Supplier_Type:
+                if already_condition_exist_outer==1:
+                    countriwise_weights+=' and '            
+
+                countriwise_weights+=' Supplier_Type in ('+str(Supplier_Type)+')'
+                already_condition_exist_outer=1
+
+            if Country_of_Origin:
+                if already_condition_exist_outer==1:
+                    countriwise_weights+=' and '            
+
+                countriwise_weights+=' Country_of_Origin in ('+str(Country_of_Origin)+')'
+                already_condition_exist_outer=1
+
+            if HS:
+                if already_condition_exist_outer==1:
+                    countriwise_weights+=' and '            
+
+                countriwise_weights+=' HS in ('+str(HS)+')'
+                already_condition_exist_outer=1
+
+            if Importer:
+                if already_condition_exist_outer==1:
+                    countriwise_weights+=' and '            
+
+                countriwise_weights+=' Importer in ('+str(Importer)+')'
+                already_condition_exist_outer=1
+
+
+        countriwise_weights+=''' GROUP BY
+              Country_of_Origin,Provider
+            ORDER BY 
+              Weight_Percentage DESC ;'''
+
+        countriwise_provider_weight_df=new_dbobj.read_table(countriwise_weights)
+
+        countriwise_provider_weight_data=countriwise_provider_weight_df.to_dict('records')    
+
+        return_dict['Provider_Weight_Distribution']=countriwise_provider_weight_data
+
+        return return_dict
+    except:
+        return None
+
+@app.get("/v1/competitor-analysis-dashboard/get-top-regions-by-company")
+async def competitor_analysis_dashboard_get_top_regions_by_company():
+    try:
+        set_env_var()
+        return_list=[]
+        new_dbobj=database(user_name , password , Database_Name , Server_Name)
+        distinct_company_group=get_distinct_company_group_names(new_dbobj,schema_name)
+
+        for each_comp_group in distinct_company_group:
+            return_list.append(get_top_regions_by_company(new_dbobj,schema_name,each_comp_group))
+        return return_list
+    except:
+        return None
+
+@app.get("/v1/competitor-analysis-dashboard/HS-code-analysis-by-country")
+async def HS_code_analysis_by_country():
+    try:
+        set_env_var()
+        new_dbobj=database(user_name , password , Database_Name , Server_Name)
+
+        analysis_by_country_query=f'''SELECT 
+        --TOP 5
+        afd.country_of_origin,
+        afd.hs,
+        SUM(afd.weight) as weight
+      FROM
+        {schema_name}.app_faurecia_data afd
+      WHERE 
+        afd.hs != 0
+      GROUP BY
+        afd.country_of_origin,
+        afd.hs
+      ORDER BY
+        SUM(afd.weight) DESC;'''
+        
+        analysis_by_country_df=new_dbobj.read_table(analysis_by_country_query)
+                
+        unique_country=analysis_by_country_df['country_of_origin'].unique()
+
+        main_dict={}
+        for each_country in unique_country:
+            country_df=analysis_by_country_df.copy()
+            country_df=country_df[country_df['country_of_origin']==each_country]
+            country_df.reset_index(inplace = True, drop = True)
+            hs_data_list=[]
+            inner_dict={}
+            outer_list=[]
+
+            for itr in range(len(country_df)):
+                most_inner_dict={}
+                most_inner_dict['hs']=int(country_df['hs'][itr])
+                most_inner_dict['weight']=country_df['weight'][itr]
+                hs_data_list.append(most_inner_dict)
+            inner_dict['country_of_origin']=each_country
+            inner_dict['hs_data']=hs_data_list
+            outer_list.append(inner_dict)
+            main_dict[each_country]=outer_list
+
+        return main_dict
+    except:
+        return None
+        
