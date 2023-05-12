@@ -1,9 +1,15 @@
 import pandas as pd
+import logging
 import pyodbc,urllib,os,uvicorn,fastapi
 from fastapi import FastAPI, Request, Form
 from fastapi.logger import logger
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+
+from fastapi.logger import logger
+gunicorn_logger = logging.getLogger('gunicorn.error')
+logger.handlers = gunicorn_logger.handlers
+logger.setLevel(gunicorn_logger.level)
 
 app = FastAPI(debug=True)
 
@@ -127,7 +133,8 @@ async def supplier_market_analysis():
         
         return main_dict
         
-    except:
+    except Exception as e:
+        logger.error("get-filter failed",exc_info=e)
         return None
 
 @app.post("/v1/rfi-rfp/get-project-supplier-details")
