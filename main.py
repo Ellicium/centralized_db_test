@@ -65,6 +65,146 @@ class database:
             
 
 
+def search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,category,region,level_1,level_2,level_3,text,project_id):
+    try:
+
+        print(supplier,category,region,level_1,level_2,level_3,text,project_id)
+        return_dict={}
+
+        supplier_info_query=f'''with pnv as (
+                SELECT  DISTINCT id,Supplier_Name, Key_Categories, Country_Region, Key_Contact_Name, Email, Website, Phone, Address, Level_1, 
+                Level_2, Level_3, Supplier_Capability, Supplier_Catalogue,1 as'is_selected' FROM {schema_name}.Vendors_Data pnv
+                where id in (select tmps.supplier_id  from {schema_name}.RFI_suppli_project tmps WHERE tmps.project_id={project_id})
+                UNION all
+                SELECT  DISTINCT id,Supplier_Name, Key_Categories, Country_Region, Key_Contact_Name, Email, Website, Phone, Address, Level_1, 
+                Level_2, Level_3, Supplier_Capability, Supplier_Catalogue,0 as'is_selected' FROM {schema_name}.Vendors_Data pnv
+                where id not in (select tmps.supplier_id  from {schema_name}.RFI_suppli_project tmps WHERE tmps.project_id={project_id}))
+                select  * from pnv'''
+
+        flag=any((supplier,category,region,level_1,level_2,level_3,text,project_id))
+
+        already_condition_exist=0
+
+        if flag:
+            supplier_info_query+=' where'        
+            if supplier:
+                if already_condition_exist==1:
+                    supplier_info_query+=' and '            
+
+                supplier_info_query+=" pnv.Supplier_Name = '"+str(supplier)+"'"
+                already_condition_exist=1
+
+            if region:
+                if already_condition_exist==1:
+                    supplier_info_query+=' and '            
+
+                supplier_info_query+=" pnv.Country_Region = '"+str(region)+"'"
+                already_condition_exist=1
+
+            if category:
+                if already_condition_exist==1:
+                    supplier_info_query+=' and '            
+
+                supplier_info_query+=" pnv.Key_Categories = '"+str(category)+"'"
+                already_condition_exist=1
+
+            if level_1:
+                if already_condition_exist==1:
+                    supplier_info_query+=' and '            
+
+                supplier_info_query+=" pnv.Level_1 = '"+str(level_1)+"'"
+                already_condition_exist=1
+
+            if level_2:
+                if already_condition_exist==1:
+                    supplier_info_query+=' and '            
+
+                supplier_info_query+=" pnv.Level_2 = '"+str(level_2)+"'"
+                already_condition_exist=1
+
+            if level_3:
+                if already_condition_exist==1:
+                    supplier_info_query+=' and '            
+
+                supplier_info_query+=" pnv.Level_3 = '"+str(level_3)+"'"
+                already_condition_exist=1
+
+
+            if text:
+                if already_condition_exist==1:
+                    supplier_info_query+=' and '            
+
+
+                supplier_info_query+=f''' LOWER(pnv.Supplier_Name) like '{text}'
+                          or LOWER(pnv.Level_1) like '{text}'
+                          or LOWER(pnv.Level_2) like '{text}' 
+                          or LOWER(pnv.Level_3) like '{text}' '''            
+
+                already_condition_exist=1
+
+        supplier_info_query+=';'
+
+        suppliers_df=new_dbobj.read_table(supplier_info_query)
+        
+
+        suppliers_df_data=suppliers_df.to_dict('records')    
+        
+        return_dict['data']=suppliers_df_data
+
+        filter_query=f'''select count(*) as 'total_record' from {schema_name}.Vendors_Data pnv'''
+        filter_query_flag=any((level_1,level_2,level_3,text))
+
+        already_condition_exist_filter=0
+
+        if filter_query_flag:
+            filter_query+=' where '
+
+            if level_1:
+                if already_condition_exist_filter==1:
+                    filter_query+=' and '            
+
+                filter_query+=" pnv.Level_1 = '"+str(level_1)+"'"
+                already_condition_exist_filter=1
+
+            if level_2:
+                if already_condition_exist_filter==1:
+                    filter_query+=' and '            
+
+                filter_query+=" pnv.Level_2 = '"+str(level_2)+"'"
+                already_condition_exist_filter=1
+
+            if level_3:
+                if already_condition_exist_filter==1:
+                    filter_query+=' and '            
+
+                filter_query+=" pnv.Level_3 = '"+str(level_3)+"'"
+                already_condition_exist_filter=1
+
+            if text:
+                if already_condition_exist_filter==1:
+                    filter_query+=' and '            
+
+                filter_query+=f''' LOWER(pnv.Supplier_Name) like '{text}'
+                          or LOWER(pnv.Level_1) like '{text}'
+                          or LOWER(pnv.Level_2) like '{text}' 
+                          or LOWER(pnv.Level_3) like '{text}' '''            
+
+                already_condition_exist_filter=1
+
+        filter_query+=';'        
+
+        filter_query_df=new_dbobj.read_table(filter_query)
+
+        return_dict['Total_record']=list(filter_query_df['total_record'])[0]
+
+        
+        return return_dict
+    
+    except:
+        return None
+
+
+
 def get_top_regions_by_company(new_dbobj,schema_name,values):
     try:
         top_region_by_comp_query=f'''SELECT  TOP 5 afd.country_of_origin as Country_of_Origin, SUM(afd.weight) as Weight_Percentage , afd.company_group 
@@ -583,3 +723,14 @@ async def HS_code_analysis_by_country():
     except:
         return None
         
+
+@app.post("/v1/rfi-rfp/search-suppliers/get-suppliers-information")
+async def search_suppliers_get_suppliers_information_api_fun(supplier :str,category:str,region:str,level_1:str,level_2:str,level_3:str,text:str,project_id: int = Form(...)):
+    try:
+
+        set_env_var()
+        new_dbobj=database(user_name , password , Database_Name , Server_Name)
+
+        return search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,category,region,level_1,level_2,level_3,text,project_id)
+    except:
+        return None
