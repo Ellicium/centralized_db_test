@@ -12,7 +12,6 @@ logger.handlers = gunicorn_logger.handlers
 logger.setLevel(gunicorn_logger.level)
 
 app = FastAPI(debug=True)
-
 load_dotenv()
 
 sqlUserName=None
