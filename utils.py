@@ -2,6 +2,7 @@ import pandas as pd
 import pyodbc,urllib,os
 from fastapi import FastAPI, Request, Form
 from sqlalchemy import create_engine
+from time import time
 
 class database:
     def __init__(self , SQLUser , SQLPassword , DatabaseName , ServerName ):
