@@ -1,33 +1,49 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+import pandas as pd
+import pyodbc
 import urllib.parse
+from sqlalchemy import create_engine, text
+from utils import timer_func
 
-sqlServerName="gtosqlserverdev.database.windows.net"
-sqlDatabaseName="gtosqldbdev"
-sqlUserName="gtoadmin"
-sqlPassword="Admin@gt0"
-sqlSchemaName="central_data_test"
-driver = "{ODBC Driver 17 for SQL Server}"
-params = urllib.parse.quote_plus(f"""Driver={driver};
-                                Server=tcp:{sqlServerName},1433;
-                                Database={sqlDatabaseName};
-                                Uid={sqlUserName};Pwd={sqlPassword};
-                                Encrypt=yes;
-                                TrustServerCertificate=no;
-                                Connection Timeout=30;""")
-SQLALCHEMY_DATABASE_URL= 'mssql+pyodbc:///?autocommit=true&odbc_connect={}'.format(params)
-# SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-# SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL,fast_executemany=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+class database:
+    @timer_func
+    def __init__(self , SQLUser , SQLPassword , DatabaseName , ServerName ):
 
-Base = declarative_base()
+        driver="{ODBC Driver 17 for SQL Server}"
+        self.conn = pyodbc.connect(f'''DRIVER={driver}; Server={ServerName };
+                                UID={SQLUser}; PWD={SQLPassword}; DataBase={DatabaseName}''')
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+        password = f"{SQLPassword}"
+        driver = "{ODBC Driver 17 for SQL Server}"
+        params = urllib.parse.quote_plus(f"""Driver={driver};
+                                        Server=tcp:{ServerName},1433;
+                                        Database={DatabaseName};
+                                        Uid={SQLUser};Pwd={password};
+                                        Encrypt=yes;
+                                        TrustServerCertificate=no;
+                                        Connection Timeout=30;""")
+        self.conn_str = 'mssql+pyodbc:///?autocommit=true&odbc_connect={}'.format(
+            params)
+        self.engine = create_engine(self.conn_str, fast_executemany=True)
+
+    # Fetching the data from the selected table using SQL query
+    @timer_func
+    def read_table(self,query):
+        rawData= pd.read_sql_query(sql = text(query), con = self.engine.connect() )
+        return rawData
+    @timer_func
+    def execute_query(self,query):
+        cursor=self.conn.cursor()
+        cursor.execute(query)
+        cursor.commit()
+    @timer_func
+    def insert_data(self, df:pd.DataFrame, table_name:str ,schema_name:str , chunksize = None, method=None):
+        try :
+            df.to_sql(table_name, con = self.engine ,if_exists='append', index=False , chunksize = chunksize,schema=schema_name, method=method)
+        except Exception as e :
+            print(e)
+    def close_conn_eng(self):
+        try:
+            self.conn.close()
+        except Exception as e:
+            print(e)
