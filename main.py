@@ -65,21 +65,71 @@ class database:
             
 
 
+
+def return_nullif_none(supplier,category,region,level_1,level_2,level_3,text,project_id):
+    if str(supplier).lower().strip()=='none':
+        supplier=None
+    if str(category).lower().strip()=='none':
+        category=None
+    if str(region).lower().strip()=='none':
+        region=None
+    if str(level_1).lower().strip()=='none':
+        level_1=None
+    if str(level_2).lower().strip()=='none':
+        level_2=None
+    if str(level_3).lower().strip()=='none':
+        level_3=None
+    if str(text).lower().strip()=='none':
+        text=None
+    if str(project_id).lower().strip()=='none':
+        project_id=None
+    
+    return supplier,category,region,level_1,level_2,level_3,text,project_id
+        
+
 def search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,category,region,level_1,level_2,level_3,text,project_id):
     try:
 
-        print(supplier,category,region,level_1,level_2,level_3,text,project_id)
+        supplier,category,region,level_1,level_2,level_3,text,project_id=return_nullif_none(supplier,category,region,level_1,level_2,level_3,text,project_id)
         return_dict={}
 
-        supplier_info_query=f'''with pnv as (
-                SELECT  DISTINCT id,Supplier_Name, Key_Categories, Country_Region, Key_Contact_Name, Email, Website, Phone, Address, Level_1, 
-                Level_2, Level_3, Supplier_Capability, Supplier_Catalogue,1 as'is_selected' FROM {schema_name}.Vendors_Data pnv
-                where id in (select tmps.supplier_id  from {schema_name}.RFI_suppli_project tmps WHERE tmps.project_id={project_id})
-                UNION all
-                SELECT  DISTINCT id,Supplier_Name, Key_Categories, Country_Region, Key_Contact_Name, Email, Website, Phone, Address, Level_1, 
-                Level_2, Level_3, Supplier_Capability, Supplier_Catalogue,0 as'is_selected' FROM {schema_name}.Vendors_Data pnv
-                where id not in (select tmps.supplier_id  from {schema_name}.RFI_suppli_project tmps WHERE tmps.project_id={project_id}))
-                select  * from pnv'''
+        supplier_info_query=f'''select 
+ds.id,
+ds.name as Supplier_Name , 
+dsi.Key_Categories,
+dc2.country ,
+dc3.Key_Contact_Name ,
+dc3.Email, 
+dc3.Website, 
+dc3.Phone,
+dc.address ,
+dsi.Supplier_Capability, 
+dsi.Supplier_Catalogue,
+dcc4.name as level1,
+dcc5.name as level2,
+dcc6.name as level3
+from {schema_name}.dim_supplier ds 
+left join {schema_name}.dim_supplier_info dsi
+on ds.id= dsi.supplier_id 
+left join {schema_name}.address_supplier_mapping asm 
+on asm.supplier_id = ds.id 
+left join {schema_name}.dim_address dc 
+on asm.address_id = dc.id 
+left join {schema_name}.dim_country dc2 
+on dc.country_id = dc2.id 
+left join {schema_name}.dim_contact dc3 
+on dc3.supplier_id = ds.id 
+left join {schema_name}.category_supplier_mapping csm 
+on csm.supplier_id =ds.id 
+left join {schema_name}.dim_category_level dcl 
+on dcl.id = csm.category_level_id 
+left join {schema_name}.dim_category dcc4
+on dcc4.id =dcl.level_1_category_id 
+left join {schema_name}.dim_category dcc5
+on dcc5.id =dcl.level_2_category_id
+left join {schema_name}.dim_category dcc6
+on dcc6.id =dcl.level_3_category_id
+'''
 
         flag=any((supplier,category,region,level_1,level_2,level_3,text,project_id))
 
@@ -91,42 +141,43 @@ def search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,ca
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" pnv.Supplier_Name = '"+str(supplier)+"'"
+                supplier_info_query+=" ds.name = '"+str(supplier)+"'"
                 already_condition_exist=1
 
             if region:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" pnv.Country_Region = '"+str(region)+"'"
+                supplier_info_query+=" dc2.country = '"+str(region)+"'"
                 already_condition_exist=1
 
             if category:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" pnv.Key_Categories = '"+str(category)+"'"
+                supplier_info_query+=" dsi.Key_Categories = '"+str(category)+"'"
                 already_condition_exist=1
 
             if level_1:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" pnv.Level_1 = '"+str(level_1)+"'"
+                supplier_info_query+=" dcc4.name = '"+str(level_1)+"'"
                 already_condition_exist=1
 
             if level_2:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" pnv.Level_2 = '"+str(level_2)+"'"
+                supplier_info_query+=" dcc5.name = '"+str(level_2)+"'"
                 already_condition_exist=1
 
             if level_3:
+                print('level_3_type',type(level_3))
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" pnv.Level_3 = '"+str(level_3)+"'"
+                supplier_info_query+=" dcc6.name = '"+str(level_3)+"'"
                 already_condition_exist=1
 
 
@@ -135,10 +186,10 @@ def search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,ca
                     supplier_info_query+=' and '            
 
 
-                supplier_info_query+=f''' LOWER(pnv.Supplier_Name) like '{text}'
-                          or LOWER(pnv.Level_1) like '{text}'
-                          or LOWER(pnv.Level_2) like '{text}' 
-                          or LOWER(pnv.Level_3) like '{text}' '''            
+                supplier_info_query+=f''' LOWER(ds.name) like '{text}'
+                          or LOWER(dcc4.name) like '{text}'
+                          or LOWER(dcc5.name) like '{text}' 
+                          or LOWER(dcc6.name) like '{text}' '''            
 
                 already_condition_exist=1
 
@@ -146,12 +197,24 @@ def search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,ca
 
         suppliers_df=new_dbobj.read_table(supplier_info_query)
         
-
         suppliers_df_data=suppliers_df.to_dict('records')    
         
         return_dict['data']=suppliers_df_data
 
-        filter_query=f'''select count(*) as 'total_record' from {schema_name}.Vendors_Data pnv'''
+        filter_query=f'''select
+count(*) as total_record
+from {schema_name}.dim_supplier ds
+left join {schema_name}.category_supplier_mapping csm
+on csm.supplier_id =ds.id
+left join {schema_name}.dim_category_level dcl
+on dcl.id = csm.category_level_id
+left join {schema_name}.dim_category dcc4
+on dcc4.id =dcl.level_1_category_id
+left join {schema_name}.dim_category dcc5
+on dcc5.id =dcl.level_2_category_id
+left join {schema_name}.dim_category dcc6
+on dcc6.id =dcl.level_3_category_id
+'''
         filter_query_flag=any((level_1,level_2,level_3,text))
 
         already_condition_exist_filter=0
@@ -163,31 +226,31 @@ def search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,ca
                 if already_condition_exist_filter==1:
                     filter_query+=' and '            
 
-                filter_query+=" pnv.Level_1 = '"+str(level_1)+"'"
+                filter_query+=" dcc4.name = '"+str(level_1)+"'"
                 already_condition_exist_filter=1
 
             if level_2:
                 if already_condition_exist_filter==1:
                     filter_query+=' and '            
 
-                filter_query+=" pnv.Level_2 = '"+str(level_2)+"'"
+                filter_query+=" dcc5.name = '"+str(level_2)+"'"
                 already_condition_exist_filter=1
 
             if level_3:
                 if already_condition_exist_filter==1:
                     filter_query+=' and '            
 
-                filter_query+=" pnv.Level_3 = '"+str(level_3)+"'"
+                filter_query+=" dcc6.name = '"+str(level_3)+"'"
                 already_condition_exist_filter=1
 
             if text:
                 if already_condition_exist_filter==1:
                     filter_query+=' and '            
 
-                filter_query+=f''' LOWER(pnv.Supplier_Name) like '{text}'
-                          or LOWER(pnv.Level_1) like '{text}'
-                          or LOWER(pnv.Level_2) like '{text}' 
-                          or LOWER(pnv.Level_3) like '{text}' '''            
+                filter_query+=f''' LOWER(ds.name) like '{text}'
+                          or LOWER(dcc4.name) like '{text}'
+                          or LOWER(dcc5.name) like '{text}' 
+                          or LOWER(dcc6.name) like '{text}' '''            
 
                 already_condition_exist_filter=1
 
@@ -196,14 +259,9 @@ def search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,ca
         filter_query_df=new_dbobj.read_table(filter_query)
 
         return_dict['Total_record']=list(filter_query_df['total_record'])[0]
-
-        
         return return_dict
-    
     except:
         return None
-
-
 
 def get_top_regions_by_company(new_dbobj,schema_name,values):
     try:
@@ -252,7 +310,6 @@ async def supplier_market_analysis():
         query2 = f'''SELECT DISTINCT Level_3 as label, Level_3 as value
         from {schema_name}.Vendors_Data vd WHERE Level_3 is not null'''
 
-
         new_df=new_dbobj.read_table(query)
         level_1=new_df.to_dict('records')
 
@@ -261,7 +318,6 @@ async def supplier_market_analysis():
 
         new_df=new_dbobj.read_table(query2)
         level_3=new_df.to_dict('records')
-
 
         main_dict={}
         main_dict["message"]= "Data Retrived successfully"
@@ -304,7 +360,6 @@ async def get_project_supplier_details(project_id: int = Form(...)):
 
         new_dbobj.close_conn_eng()
         return resp_dict
-
     except:
         return None
     
@@ -730,7 +785,6 @@ async def search_suppliers_get_suppliers_information_api_fun(supplier :str,categ
 
         set_env_var()
         new_dbobj=database(user_name , password , Database_Name , Server_Name)
-
         return search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,category,region,level_1,level_2,level_3,text,project_id)
     except:
         return None
