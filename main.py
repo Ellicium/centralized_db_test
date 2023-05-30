@@ -782,7 +782,6 @@ async def HS_code_analysis_by_country():
 @app.post("/v1/rfi-rfp/search-suppliers/get-suppliers-information")
 async def search_suppliers_get_suppliers_information_api_fun(supplier :str,category:str,region:str,level_1:str,level_2:str,level_3:str,text:str,project_id: int = Form(...)):
     try:
-
         set_env_var()
         new_dbobj=database(user_name , password , Database_Name , Server_Name)
         return search_suppliers_get_suppliers_information(new_dbobj,schema_name,supplier,category,region,level_1,level_2,level_3,text,project_id)
