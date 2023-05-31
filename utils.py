@@ -13,6 +13,7 @@ def timer_func(func):
     return wrap_func
 
 
+
 def return_nullif_none(supplier,category,region,level_1,level_2,level_3,text):
     if str(supplier).lower().strip()=='none':
         supplier=None
@@ -198,9 +199,38 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
     except:
         return None
 
-def get_categorywise_count(new_dbobj,schema_name):
+
+def return_null_if_none_category(level_1,level_2,level_3,category_text):
+    if str(level_1).lower().strip()=='none':
+        level_1=None
+    if str(level_2).lower().strip()=='none':
+        level_2=None
+    if str(level_3).lower().strip()=='none':
+        level_3=None
+    if str(category_text).lower().strip()=='none':
+        category_text=None
+    
+    return level_1,level_2,level_3,category_text
+    
+
+
+def get_categorywise_count(new_dbobj,schema_name, level_1,level_2,level_3,category_text):
     try:
         response_dict={}
+
+        level_1,level_2,level_3,category_text=return_null_if_none_category(level_1,level_2,level_3,category_text)
+        
+        filter_query=' '
+
+        if level_1:
+            filter_query+=f" and dcc4.name like '{level_1}' "
+        if level_2:
+            filter_query+=f" and dcc5.name like '{level_2}' "
+        if level_3:
+            filter_query+=f" and dcc6.name like '{level_3}' "
+        if category_text:
+            filter_query+=f" and dcc6.name like '{category_text}' or and dcc5.name like '{category_text}' or and dcc4.name like '{category_text}' "
+
         query_data=f'''
           select DISTINCT 
             dcc4.name as category ,
@@ -217,11 +247,12 @@ def get_categorywise_count(new_dbobj,schema_name):
             left join {schema_name}.dim_category dcc6
             on dcc6.id =dcl.level_3_category_id
             where dcc4.name is not null
+            {filter_query}
             group by dcc4.name 
-           order by count(DISTINCT ds.id) desc;
-        '''
-
+           order by count(DISTINCT ds.id) desc;'''
+        
         unique_supplier_count_query=f'''select count(DISTINCT name) as supplier_name from {schema_name}.dim_supplier ds where name is not null;'''
+        print(query_data)
         data_df = new_dbobj.read_table(query_data)
         supplier_count_df = new_dbobj.read_table(unique_supplier_count_query)
         response = data_df.to_dict(orient='records')
@@ -231,4 +262,3 @@ def get_categorywise_count(new_dbobj,schema_name):
     except Exception as e:
         print(e)
         return None
-        

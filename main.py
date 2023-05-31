@@ -174,11 +174,11 @@ async def search_suppliers_get_suppliers_information_api_fun(supplier :str,categ
         return None
 
 @app.post("/Suppliers/get-supplier-catogarywise")
-async def search_suppliers_get_supplier_catogarywise_api_fun():
+async def search_suppliers_get_supplier_catogarywise_api_fun(level_1 :str,level_2 :str,level_3 :str,category_text :str):
     try:
         set_env_var()
         new_dbobj=database(sqlUserName , sqlPassword , sqlDatabaseName , sqlServerName)
-        return utils.get_categorywise_count(new_dbobj,sqlSchemaName)
+        return utils.get_categorywise_count(new_dbobj,sqlSchemaName,level_1,level_2,level_3,category_text)
     except Exception as e:
         print(e)
         return None
