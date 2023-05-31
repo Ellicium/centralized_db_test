@@ -1,24 +1,24 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 class SupplierCountResponse(BaseModel):
-    country: str = None
-    country_code: str = None
-    supplier_count: int = None
+    country: Optional[str] = None
+    country_code: Optional[str] = None
+    supplier_count: Optional[int] = None
 
 class SupplierCountPost(BaseModel):
-    text: str = None
-    level_1: str = None
-    level_2: str = None
-    level_3: str = None
+    text: Optional[str] = None
+    level_1: Optional[str] = None
+    level_2: Optional[str] = None
+    level_3: Optional[str] = None
 
 class LevelItem(BaseModel):
-    label: str = None
-    value: str = None
+    label: Optional[str] = None
+    value: Optional[str] = None
 
 
 class FilterResponse(BaseModel):
-    message: str = None
+    message: Optional[str] = None
     level_1: List[LevelItem]
     level_2: List[LevelItem]
     level_3: List[LevelItem]
