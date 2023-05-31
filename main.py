@@ -1,5 +1,5 @@
 import logging
-import os
+import os,math
 from fastapi import FastAPI, Request, Form, Response
 from fastapi.logger import logger
 from dotenv import load_dotenv
@@ -169,6 +169,16 @@ async def search_suppliers_get_suppliers_information_api_fun(supplier :str,categ
         set_env_var()
         new_dbobj=database(sqlUserName , sqlPassword , sqlDatabaseName , sqlServerName)
         return utils.search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,category,region,level_1,level_2,level_3,text)
+    except Exception as e:
+        print(e)
+        return None
+
+@app.post("/Suppliers/get-supplier-catogarywise")
+async def search_suppliers_get_supplier_catogarywise_api_fun():
+    try:
+        set_env_var()
+        new_dbobj=database(sqlUserName , sqlPassword , sqlDatabaseName , sqlServerName)
+        return utils.get_categorywise_count(new_dbobj,sqlSchemaName)
     except Exception as e:
         print(e)
         return None

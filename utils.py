@@ -1,5 +1,5 @@
 from time import time
-
+import math
 
 def timer_func(func):
     # This function shows the execution time of
@@ -198,3 +198,37 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
     except:
         return None
 
+def get_categorywise_count(new_dbobj,schema_name):
+    try:
+        response_dict={}
+        query_data=f'''
+          select DISTINCT 
+            dcc4.name as category ,
+            count(DISTINCT ds.id) as category_count
+            from {schema_name}.dim_supplier ds
+            left join {schema_name}.category_supplier_mapping csm
+            on csm.supplier_id =ds.id
+            left join {schema_name}.dim_category_level dcl
+            on dcl.id = csm.category_level_id
+            left join {schema_name}.dim_category dcc4
+            on dcc4.id =dcl.level_1_category_id
+            left join {schema_name}.dim_category dcc5
+            on dcc5.id =dcl.level_2_category_id
+            left join {schema_name}.dim_category dcc6
+            on dcc6.id =dcl.level_3_category_id
+            where dcc4.name is not null
+            group by dcc4.name 
+           order by count(DISTINCT ds.id) desc;
+        '''
+
+        unique_supplier_count_query=f'''select count(DISTINCT name) as supplier_name from {schema_name}.dim_supplier ds where name is not null;'''
+        data_df = new_dbobj.read_table(query_data)
+        supplier_count_df = new_dbobj.read_table(unique_supplier_count_query)
+        response = data_df.to_dict(orient='records')
+        response_dict['data']=response
+        response_dict['Total_Catagory']=str(math.floor(supplier_count_df['supplier_name'][0]/1000))+'K'
+        return response_dict
+    except Exception as e:
+        print(e)
+        return None
+        
