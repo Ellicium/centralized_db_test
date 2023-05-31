@@ -46,10 +46,11 @@ def countrywise_supplier_count(freetext, level_1, level_2,level_3):
                     dc.country,
                     dc.iso2
                 FROM
-                    {sqlSchemaName}.dim_supplier ds
-                    RIGHT JOIN {sqlSchemaName}.address_supplier_mapping asm ON ds.id = asm.supplier_id
+                    {sqlSchemaName}.address_supplier_mapping asm
+                    LEFT JOIN {sqlSchemaName}.dim_supplier ds ON asm.supplier_id = ds.id
                     LEFT JOIN {sqlSchemaName}.dim_address da ON asm.address_id = da.id
-                    LEFT JOIN {sqlSchemaName}.dim_country dc ON da.country_id = dc.id) query1
+                    LEFT JOIN {sqlSchemaName}.dim_country dc ON da.country_id = dc.id
+                WHERE dc.country is not null and dc.iso2 is not null) query1
             Inner JOIN
                 (SELECT
                     csm.supplier_id,
@@ -57,14 +58,14 @@ def countrywise_supplier_count(freetext, level_1, level_2,level_3):
                     dc2.name level_2,
                     dc3.name level_3
                 FROM
-                    {sqlSchemaName}.dim_supplier ds
-                    RIGHT JOIN {sqlSchemaName}.category_supplier_mapping csm ON ds.id = csm.supplier_id
+                    {sqlSchemaName}.category_supplier_mapping csm
+                    LEFT JOIN {sqlSchemaName}.dim_supplier ds ON csm.supplier_id = ds.id
                     LEFT JOIN {sqlSchemaName}.dim_category_level dcl ON csm.category_level_id = dcl.id
                     LEFT JOIN {sqlSchemaName}.dim_category dc1 ON dcl.level_1_category_id = dc1.id
                     LEFT JOIN {sqlSchemaName}.dim_category dc2 ON dcl.level_2_category_id = dc2.id
                     LEFT JOIN {sqlSchemaName}.dim_category dc3 ON dcl.level_3_category_id = dc3.id) query2
             ON query1.supplier_id = query2.supplier_id"""
-        #if freetext or level_1 or level_2 or level_3:
+            #if freetext or level_1 or level_2 or level_3:
         if True:
             flag = True
             if level_1:
@@ -98,13 +99,13 @@ def countrywise_supplier_count(freetext, level_1, level_2,level_3):
                 or LOWER(query2.Level_1) like '{freetext}'
                 or LOWER(query2.Level_2) like '{freetext}'
                 or LOWER(query2.Level_3) like '{freetext}'"""
-            if flag:
-                apiquery += " WHERE"
-                flag = False
-            else:
-                apiquery += " AND"
+            # if flag:
+            #     apiquery += " WHERE"
+            #     flag = False
+            # else:
+            #     apiquery += " AND"
 
-        apiquery += " query1.country is not null and iso2 is not null"
+        #apiquery += " query1.country is not null and iso2 is not null"
         apiquery += " group by query1.country, query1.iso2 order by supplier_count desc;"
         print(apiquery)
         countrywiseSupplierCount = dbobj.read_table(apiquery)
@@ -117,7 +118,7 @@ async def get_supplier_count(apipostschema:schemas.SupplierCountPost):
     try:
         logger.info(f"freetext:{apipostschema.text}, level_1:{apipostschema.level_1}, level_2:{apipostschema.level_2}, level_3:{apipostschema.level_3}")
         data = countrywise_supplier_count(apipostschema.text, apipostschema.level_1, apipostschema.level_2, apipostschema.level_3)
-        returnData = data.to_dict(orient='records')
+        returnData = data.to_json(orient='records')
         return Response(content=returnData, media_type="application/json",status_code=200)
     except Exception as e:
         logger.error("get_supplier_count failed",exc_info=e)
