@@ -262,3 +262,91 @@ def get_categorywise_count(new_dbobj,schema_name, level_1,level_2,level_3,catego
     except Exception as e:
         print(e)
         return None
+    
+
+def supplier_details_api(new_dbobj,schema_name,supplier_id):
+    try:
+        supplier_id=str(int(supplier_id))
+        sql_query_for_data_for_supplier_id=f'''select
+        q3.Supplier_Name ,q1.level1 ,q1.level2,q1.level3,q2.supplier_additional_info,q2.supplier_capability ,q2.additionalNotes,q3.country ,q3.address ,q3.email ,q3.website,q3.phone
+        from
+        (
+        select
+            DISTINCT 
+        ds.id,
+            dcc4.name as level1,
+            dcc5.name as level2,
+            dcc6.name as level3
+        from
+            {schema_name}.dim_supplier ds
+        left join {schema_name}.category_supplier_mapping csm
+        on
+            csm.supplier_id = ds.id
+        left join {schema_name}.dim_category_level dcl
+        on
+            dcl.id = csm.category_level_id
+        left join {schema_name}.dim_category dcc4
+        on
+            dcc4.id = dcl.level_1_category_id
+        left join {schema_name}.dim_category dcc5
+        on
+            dcc5.id = dcl.level_2_category_id
+        left join {schema_name}.dim_category dcc6
+        on
+            dcc6.id = dcl.level_3_category_id
+        where
+            ds.id = {supplier_id}) q1
+        join 
+        (
+        select
+            DISTINCT ds.id,
+            dsi.supplier_additional_info,
+            dsi.supplier_capability ,
+            null as additionalNotes
+        from
+            {schema_name}.dim_supplier ds
+        left join {schema_name}.dim_supplier_info dsi
+        on
+            ds.id = dsi.supplier_id
+        where
+            ds.id = {supplier_id}) q2
+        on
+        q1.id = q2.id
+        join
+        (
+        select
+            DISTINCT
+        ds.id,
+            ds.name as Supplier_Name ,    dc2.country ,    dc.address ,    dc3.email ,    dc3.website,    dc3.phone
+        from
+            {schema_name}.dim_supplier ds
+        left join {schema_name}.dim_supplier_info dsi
+        on
+            ds.id = dsi.supplier_id
+        left join {schema_name}.address_supplier_mapping asm
+        on
+            asm.supplier_id = ds.id
+        left join {schema_name}.dim_address dc
+        on
+            asm.address_id = dc.id
+        left join {schema_name}.dim_country dc2
+        on
+            dc.country_id = dc2.id
+        left join {schema_name}.dim_contact dc3 
+        on
+            dc3.supplier_id = ds.id
+            and dc3.address_supplier_mapping_id = asm.address_id
+        where
+            ds.id = {supplier_id}
+        ) q3
+        on
+        q2.id = q3.id
+        ;
+        '''
+        supplier_info_df = new_dbobj.read_table(sql_query_for_data_for_supplier_id)
+        return supplier_info_df.to_dict(orient='records')
+    except Exception as e:
+        print(e)
+        return None
+    
+

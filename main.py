@@ -182,3 +182,14 @@ async def search_suppliers_get_supplier_catogarywise_api_fun(level_1 :str,level_
     except Exception as e:
         print(e)
         return None
+    
+
+@app.post("/Suppliers/get-supplier-details")
+async def search_suppliers_get_supplier_details_api_fun(supplier_id):
+    try:
+        set_env_var()
+        new_dbobj=database(sqlUserName , sqlPassword , sqlDatabaseName , sqlServerName)
+        return utils.supplier_details_api(new_dbobj,sqlSchemaName,supplier_id)
+    except Exception as e:
+        print(e)
+        return None
