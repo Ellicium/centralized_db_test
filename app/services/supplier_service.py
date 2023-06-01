@@ -391,6 +391,8 @@ def get_categorywise_count(new_dbobj,schema_name, level_1,level_2,level_3,catego
 def supplier_details_api(new_dbobj,schema_name,supplier_id):
     try:
         supplier_id=str(int(supplier_id))
+        # if supplier_id=='0':
+        #     supplier_id=None
         sql_query_for_data_for_supplier_id=f'''select
         q3.Supplier_Name ,q1.level1 ,q1.level2,q1.level3,q2.supplier_additional_info,q2.supplier_capability ,q2.additionalNotes,q3.country ,q3.address ,q3.email ,q3.website,q3.phone
         from
