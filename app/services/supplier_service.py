@@ -5,7 +5,6 @@ import pandas as pd
 from time import time
 from dotenv import load_dotenv
 from fastapi.logger import logger
-from ..config.db_config import database
 
 gunicorn_logger = logging.getLogger('gunicorn.error')
 logger.handlers = gunicorn_logger.handlers
@@ -59,12 +58,12 @@ def countrywise_supplier_count(freetext, level_1, level_2,level_3, dbobj):
     try:
         set_env_var()
         #dbobj=database(sqlUserName , sqlPassword , sqlDatabaseName , sqlServerName)
-        apiquery = f"""SELECT
+        apiquery = f"""SELECT distinct
                 count(query1.supplier_id) as 'supplier_count',  
                 upper(query1.country) as 'country',
                 upper(query1.iso2) 'country_code'
             FROM
-                (SELECT
+                (SELECT distinct
                     ds.name,
                     asm.supplier_id,
                     dc.country,
@@ -76,7 +75,7 @@ def countrywise_supplier_count(freetext, level_1, level_2,level_3, dbobj):
                     LEFT JOIN {sqlSchemaName}.dim_country dc ON da.country_id = dc.id
                 WHERE dc.country is not null and dc.iso2 is not null) query1
             Inner JOIN
-                (SELECT
+                (SELECT distinct
                     csm.supplier_id,
                     dc1.name level_1,
                     dc2.name level_2,
