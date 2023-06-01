@@ -5,7 +5,7 @@ from fastapi.logger import logger
 from dotenv import load_dotenv
 from ..config.db_config import database
 from ..schemas.supplier_schema import SupplierCountPost, SupplierCountResponse,FilterResponse
-from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information
+from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api
 
 gunicorn_logger = logging.getLogger('gunicorn.error')
 logger.handlers = gunicorn_logger.handlers
@@ -74,6 +74,16 @@ async def search_suppliers_get_supplier_catogarywise_api_fun(level_1 :str,level_
         set_env_var()
         new_dbobj=database()
         return get_categorywise_count(new_dbobj,sqlSchemaName,level_1,level_2,level_3,category_text)
+    except Exception as e:
+        print(e)
+        return None
+
+@router.post("/Suppliers/get-supplier-details")
+async def search_suppliers_get_supplier_details_api_fun(supplier_id):
+    try:
+        set_env_var()
+        new_dbobj=database()
+        return supplier_details_api(new_dbobj,sqlSchemaName,supplier_id)
     except Exception as e:
         print(e)
         return None
