@@ -77,7 +77,7 @@ async def search_suppliers_get_supplier_catogarywise_api_fun(apipostschema:Suppl
         print(e)
         return None
 
-@router.post("/Suppliers/get-supplier-details")
+@router.post("/suppliers/get-supplier-details")
 async def search_suppliers_get_supplier_details_api_fun(apipostschema:SupplierDetails):
     try:
         set_env_var()
