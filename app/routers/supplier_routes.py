@@ -56,6 +56,7 @@ async def search_suppliers_get_suppliers_information_api_fun(apipostschema:Suppl
         new_dbobj=database()
         return search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,apipostschema.supplier,apipostschema.category,apipostschema.region,apipostschema.level_1,apipostschema.level_2,apipostschema.level_3,apipostschema.text)
     except Exception as e:
+        logger.error(e)
         print(e)
         return None
 
@@ -66,6 +67,7 @@ async def search_suppliers_get_supplier_catogarywise_api_fun(apipostschema:Suppl
         new_dbobj=database()
         return get_categorywise_count(new_dbobj,sqlSchemaName,apipostschema.level_1,apipostschema.level_2,apipostschema.level_3,apipostschema.category_text)
     except Exception as e:
+        logger.error(e)
         print(e)
         return None
 
@@ -76,5 +78,6 @@ async def search_suppliers_get_supplier_details_api_fun(apipostschema:SupplierDe
         new_dbobj=database()
         return supplier_details_api(new_dbobj,sqlSchemaName,apipostschema.supplier_id)
     except Exception as e:
+        logger.error(e)
         print(e)
         return None

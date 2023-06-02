@@ -323,7 +323,8 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
         filter_query_df=new_dbobj.read_table(filter_query)
         return_dict['Total_record']=list(filter_query_df['total_record'])[0]
         return return_dict
-    except:
+    except Exception as e:
+        logger.error(e)
         return None
 
 
@@ -387,6 +388,7 @@ def get_categorywise_count(new_dbobj,schema_name, level_1,level_2,level_3,catego
         response_dict['total_category']=str(math.floor(supplier_count_df['supplier_name'][0]/1000))+'K'
         return response_dict
     except Exception as e:
+        logger.error(e)
         print(e)
         return None
     
@@ -475,6 +477,7 @@ def supplier_details_api(new_dbobj,schema_name,supplier_id):
         supplier_info_df = new_dbobj.read_table(sql_query_for_data_for_supplier_id)
         return supplier_info_df.to_dict(orient='records')
     except Exception as e:
+        logger.error(e)
         print(e)
         return None
     
