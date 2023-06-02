@@ -38,15 +38,18 @@ def get_filters(dbobj):
         level1Query = f'''select 
                         DISTINCT dc.name as 'label', dc.name as 'value' 
                         from {sqlSchemaName}.dim_category_level dcl  
-                        left join {sqlSchemaName}.dim_category dc on dcl.level_1_category_id = dc.id'''
+                        left join {sqlSchemaName}.dim_category dc on dcl.level_1_category_id = dc.id
+                        order by dc.name'''
         level2Query = f'''select 
                     DISTINCT dc.name as 'label', dc.name as 'value' 
                     from {sqlSchemaName}.dim_category_level dcl  
-                    left join {sqlSchemaName}.dim_category dc on dcl.level_2_category_id = dc.id'''
+                    left join {sqlSchemaName}.dim_category dc on dcl.level_2_category_id = dc.id
+                    order by dc.name'''
         level3Query = f'''select 
                     DISTINCT dc.name as 'label', dc.name as 'value' 
                     from {sqlSchemaName}.dim_category_level dcl  
-                    left join {sqlSchemaName}.dim_category dc on dcl.level_3_category_id = dc.id'''
+                    left join {sqlSchemaName}.dim_category dc on dcl.level_3_category_id = dc.id
+                    order by dc.name'''
         level1Data = dbobj.read_table(level1Query)
         level2Data = dbobj.read_table(level2Query)
         level3Data = dbobj.read_table(level3Query)
