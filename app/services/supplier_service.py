@@ -167,9 +167,9 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
         
         supplier_info_query=f'''select distinct
     ds.ap_supplier_id,
-    ds.name as Supplier_Name , 
+    ds.name as supplier_name , 
     dc2.country ,
-    dsi.Supplier_Capability,
+    dsi.Supplier_Capability as supplier_capability,
     dcc4.name as level1,
     dcc5.name as level2,
     dcc6.name as level3
@@ -384,7 +384,7 @@ def get_categorywise_count(new_dbobj,schema_name, level_1,level_2,level_3,catego
         supplier_count_df = new_dbobj.read_table(unique_supplier_count_query)
         response = data_df.to_dict(orient='records')
         response_dict['data']=response
-        response_dict['Total_Catagory']=str(math.floor(supplier_count_df['supplier_name'][0]/1000))+'K'
+        response_dict['total_category']=str(math.floor(supplier_count_df['supplier_name'][0]/1000))+'K'
         return response_dict
     except Exception as e:
         print(e)
@@ -394,8 +394,10 @@ def get_categorywise_count(new_dbobj,schema_name, level_1,level_2,level_3,catego
 def supplier_details_api(new_dbobj,schema_name,supplier_id):
     try:
         supplier_id=str(int(supplier_id))
+        # if supplier_id=='0':
+        #     supplier_id=None
         sql_query_for_data_for_supplier_id=f'''select
-        q3.Supplier_Name ,q1.level1 ,q1.level2,q1.level3,q2.supplier_additional_info,q2.supplier_capability ,q2.additionalNotes,q3.country ,q3.address ,q3.email ,q3.website,q3.phone
+        q3.supplier_name ,q1.level1 ,q1.level2,q1.level3,q2.supplier_additional_info,q2.supplier_capability ,q2.additionalNotes as additional_notes,q3.country ,q3.address ,q3.email ,q3.website,q3.phone
         from
         (
         select
@@ -476,4 +478,3 @@ def supplier_details_api(new_dbobj,schema_name,supplier_id):
         print(e)
         return None
     
-
