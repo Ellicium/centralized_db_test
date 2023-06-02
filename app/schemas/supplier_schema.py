@@ -21,14 +21,16 @@ class SupplierInfo(BaseModel):
     level_2: Optional[str] = None
     level_3: Optional[str] = None
     text: Optional[str] = None
-
+    page_number: Optional[int] = None
+    page_size: Optional[int] = None
+    
 
 class SupplierInfoResponse(BaseModel):
     ap_supplier_id: Optional[str] = None
     Supplier_Name:  Optional[str] = None
     country:  Optional[str] = None
     Supplier_Capability:  Optional[str] = None
-    level1:  Optional[str] = None
+    level1:  Optional[int] = None
     level2:  Optional[str] = None
     level3:  Optional[str] = None
 

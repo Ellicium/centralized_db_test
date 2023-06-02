@@ -54,7 +54,7 @@ async def search_suppliers_get_suppliers_information_api_fun(apipostschema:Suppl
     try:
         set_env_var()
         new_dbobj=database()
-        return search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,apipostschema.supplier,apipostschema.category,apipostschema.region,apipostschema.level_1,apipostschema.level_2,apipostschema.level_3,apipostschema.text)
+        return search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,apipostschema.supplier,apipostschema.category,apipostschema.region,apipostschema.level_1,apipostschema.level_2,apipostschema.level_3,apipostschema.text,apipostschema.page_number,apipostschema.page_size)
     except Exception as e:
         logger.error(e)
         print(e)

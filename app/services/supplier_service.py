@@ -160,12 +160,11 @@ def return_nullif_none(supplier,category,region,level_1,level_2,level_3,text):
     return supplier,category,region,level_1,level_2,level_3,text
         
 
-def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,category,region,level_1,level_2,level_3,text):
+def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,category,region,level_1,level_2,level_3,text,page_number,page_size):
     try:
         supplier,category,region,level_1,level_2,level_3,text=return_nullif_none(supplier,category,region,level_1,level_2,level_3,text)
         return_dict={}
-        
-        supplier_info_query=f'''select distinct
+        supplier_info_query=f'''select
     ds.ap_supplier_id,
     ds.name as supplier_name , 
     dc2.country ,
@@ -243,11 +242,9 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
                 supplier_info_query+=" dcc6.name = '"+str(level_3)+"'"
                 already_condition_exist=1
 
-
             if text:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
-
 
                 supplier_info_query+=f''' LOWER(ds.name) like '{text}'
                           or LOWER(dcc4.name) like '{text}'
@@ -256,11 +253,15 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
 
                 already_condition_exist=1
         
+        supplier_info_query+=f''' order by ds.id 
+        offset {page_number*page_size} rows
+        FETCH next {page_size} rows only '''
+
         supplier_info_query+=';'
 
         print(supplier_info_query)
 
-        suppliers_df=new_dbobj.read_table(supplier_info_query)
+        suppliers_df=new_dbobj.read_table(supplier_info_query).drop_duplicates()
 
         suppliers_df_data=suppliers_df.to_dict('records')    
         
@@ -321,7 +322,7 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
         filter_query+=';'        
         print(filter_query)
         filter_query_df=new_dbobj.read_table(filter_query)
-        return_dict['Total_record']=list(filter_query_df['total_record'])[0]
+        return_dict['total_record']=list(filter_query_df['total_record'])[0]
         return return_dict
     except Exception as e:
         logger.error(e)
