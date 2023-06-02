@@ -21,9 +21,7 @@ def set_env_var():
     sqlSchemaName=os.getenv("sqlSchemaName")
 
 router = APIRouter()
-
 set_env_var()
-
 dbobj=database()
 
 @router.post("/suppliers/get-supplier-count", response_model=SupplierCountResponse)
@@ -35,9 +33,6 @@ async def get_supplier_count(apipostschema:SupplierCountPost):
         return Response(content=returnData, media_type="application/json",status_code=200)
     except Exception as e:
         logger.error("get_supplier_count failed",exc_info=e)
-
-
-
 
 @router.get("/suppliers/get-filters",response_model=FilterResponse)
 async def get_filters_api():
@@ -54,7 +49,6 @@ async def get_filters_api():
     except Exception as e:
         logger.error("get_filters failed",exc_info=e)
 
-
 @router.post("/suppliers/get-suppliers-information")
 async def search_suppliers_get_suppliers_information_api_fun(apipostschema:SupplierInfo):
     try:
@@ -64,8 +58,6 @@ async def search_suppliers_get_suppliers_information_api_fun(apipostschema:Suppl
     except Exception as e:
         print(e)
         return None
-
-
 
 @router.post("/suppliers/get-supplier-catogarywise")
 async def search_suppliers_get_supplier_catogarywise_api_fun(apipostschema:SupplierCategoryWise):
