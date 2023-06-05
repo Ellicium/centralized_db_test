@@ -4,8 +4,8 @@ from fastapi import FastAPI, Request, Form, Response, APIRouter
 from fastapi.logger import logger
 from dotenv import load_dotenv
 from ..config.db_config import database
-from ..schemas.supplier_schema import SupplierCountPost, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails
-from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api
+from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails
+from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country
 
 gunicorn_logger = logging.getLogger('gunicorn.error')
 logger.handlers = gunicorn_logger.handlers
@@ -81,3 +81,28 @@ async def search_suppliers_get_supplier_details_api_fun(apipostschema:SupplierDe
         logger.error(e)
         print(e)
         return None
+    
+
+@router.get("/suppliers/get_unique_country")
+async def search_suppliers_get_unique_country():
+    try:
+        set_env_var()
+        new_dbobj=database()
+        return get_unique_country(new_dbobj,sqlSchemaName)
+    except Exception as e:
+        logger.error(e)
+        print(e)
+        return None
+    
+
+# @router.post("/suppliers/get-suppliers-information-country")
+# async def search_suppliers_get_suppliers_information_by_country(apipostschema:SupplierInfoCountry):
+#     try:
+#         set_env_var()
+#         new_dbobj=database()
+#         return search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,apipostschema.supplier,apipostschema.country,apipostschema.page_number,apipostschema.page_size)
+#     except Exception as e:
+#         logger.error(e)
+#         print(e)
+#         return None
+

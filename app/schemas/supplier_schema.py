@@ -25,6 +25,12 @@ class SupplierInfo(BaseModel):
     page_size: Optional[int] = None
     
 
+class SupplierInfoCountry(BaseModel):
+    supplier : Optional[str] = None
+    country: Optional[List[str]] = None
+    page_number: Optional[int] = None
+    page_size: Optional[int] = None
+
 class SupplierInfoResponse(BaseModel):
     ap_supplier_id: Optional[str] = None
     Supplier_Name:  Optional[str] = None
