@@ -502,13 +502,13 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
         supplier,category,region,level_1,level_2,level_3,text=return_nullif_none(supplier,category,region,level_1,level_2,level_3,text)
         return_dict={}
         supplier_info_query=f'''select
-    ds.ap_supplier_id,
-    ds.name as supplier_name , 
-    dc2.country ,
-    dsi.Supplier_Capability as supplier_capability,
-    dcc4.name as level1,
-    dcc5.name as level2,
-    dcc6.name as level3
+    ds.ap_supplier_id as id,
+    ds.name as Supplier_Name , 
+    dc2.country as Country_Region ,
+    dsi.Supplier_Capability,
+    dcc4.name as Level_1,
+    dcc5.name as Level_2,
+    dcc6.name as Level_3
     from {sqlSchemaName}.dim_supplier ds 
     left join {sqlSchemaName}.dim_supplier_info dsi
     on ds.id= dsi.supplier_id 
