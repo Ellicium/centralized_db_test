@@ -78,9 +78,7 @@ async def search_suppliers_get_supplier_details_api_fun(apipostschema:SupplierDe
 @router.get("/suppliers/get_unique_country")
 async def search_suppliers_get_unique_country():
     try:
-        set_env_var()
-        new_dbobj=database()
-        return get_unique_country(new_dbobj,sqlSchemaName)
+        return get_unique_country(dbobj)
     except Exception as e:
         logger.error(e)
         print(e)

@@ -304,9 +304,10 @@ def supplier_details_api(new_dbobj,schema_name,supplier_id):
         return None
     
 
-def get_unique_country(new_dbobj,schema_name):
+def get_unique_country(new_dbobj):
     try:
-       
+        set_env_var()
+        schema_name=sqlSchemaName
         unique_country=new_dbobj.read_table(f'''select DISTINCT country,upper(iso2) as country_code  from {schema_name}.dim_country
         where country is not null;''')
         unique_country["country"]= unique_country["country"].str.title()
