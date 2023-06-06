@@ -215,8 +215,10 @@ def get_categorywise_count(new_dbobj,schema_name, level_1,level_2,level_3,catego
         return None
     
 
-def supplier_details_api(new_dbobj,schema_name,supplier_id):
+def supplier_details_api(new_dbobj,supplier_id):
     try:
+        set_env_var()
+        schema_name=sqlSchemaName
         supplier_id=str(int(supplier_id))
         # if supplier_id=='0':
         #     supplier_id=None
@@ -357,9 +359,64 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
         flag=any((supplier,region))
 
         already_condition_exist=0
-        
-        print('supplier',supplier)
-        if flag:
+
+        both_filter_flag=0
+
+        if region and supplier:
+            supplier_info_query=f'''SELECT 
+	ds.id,
+	ds.Supplier_ID,
+    ds.Supplier_Name ,
+    ds.Country_Region ,
+	q2.Supplier_Capability,
+	q2.Level_1,
+	q2.Level_2,
+	q2.Level_3    
+from  
+    (select    
+	ds.id,
+	ds.ap_supplier_id as Supplier_ID,
+    ds.name as Supplier_Name ,
+    q3.country as Country_Region 
+from {sqlSchemaName}.dim_supplier ds 
+left join {sqlSchemaName}.dim_supplier_info dsi
+on ds.id= dsi.supplier_id
+left join {sqlSchemaName}.address_supplier_mapping asm
+on asm.supplier_id = ds.id
+left join {sqlSchemaName}.dim_address dc
+on asm.address_id = dc.id
+left join 
+(select id,country from {sqlSchemaName}.dim_country dc3
+where country in ( '{str("','".join(list(region))) }' ))q3
+on q3.id=dc.country_id 
+)ds
+left join 
+(select
+	ds.id,
+    dsi.Supplier_Capability,
+    dcc4.name as Level_1,
+    dcc5.name as Level_2,
+    dcc6.name as Level_3
+from {sqlSchemaName}.dim_supplier ds 
+    left join {sqlSchemaName}.category_supplier_mapping csm
+    on csm.supplier_id =ds.id
+    left join {sqlSchemaName}.dim_category_level dcl
+    on dcl.id = csm.category_level_id
+    left join {sqlSchemaName}.dim_category dcc4
+    on dcc4.id =dcl.level_1_category_id
+    left join {sqlSchemaName}.dim_category dcc5
+    on dcc5.id =dcl.level_2_category_id
+    left join {sqlSchemaName}.dim_category dcc6
+    on dcc6.id =dcl.level_3_category_id
+    left join {sqlSchemaName}.dim_supplier_info dsi 
+    on dsi.supplier_id = ds.id
+)q2
+on ds.id=q2.id
+where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Supplier_Capability)'''
+
+            both_filter_flag=1
+            
+        if flag and both_filter_flag==0:
             supplier_info_query+=' where '        
             if supplier:
                 if already_condition_exist==1:
@@ -372,14 +429,15 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                print(type(region))
-                region = "','".join(list(region))
-                supplier_info_query+=" dc2.country in ('"+str(region)+"')"
+                supplier_info_query+=" dc2.country in ('"+str( "','".join(list(region)))+"')"
                 already_condition_exist=1
 
-        if region is None and supplier is None:
+        if page_size>0:
+            offset=page_number-1*page_size
+            if offset<0:
+                offset=0
             supplier_info_query+=f''' order by ds.id 
-            offset {page_number*page_size} rows
+            offset {offset} rows
             FETCH next {page_size} rows only '''
 
         supplier_info_query+=';'
@@ -387,6 +445,10 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
         print(supplier_info_query)
 
         suppliers_df=new_dbobj.read_table(supplier_info_query).drop_duplicates()
+
+        for column in suppliers_df:
+            if column not in ['id','Supplier_ID']:
+                suppliers_df[column]=suppliers_df[column].str.title()
 
         suppliers_df_data=suppliers_df.to_dict('records')    
         
@@ -425,17 +487,17 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
                 if already_condition_exist==1:
                     filter_query+=' and '            
 
-                filter_query+=" ds.name = '"+str(supplier)+"'"
+                filter_query+=f''' '{str(supplier)}' in (ds.name,dcc4.name,dcc5.name,dcc6.name,ds.ap_supplier_id,dsi.supplier_capability)'''
                 already_condition_exist=1
 
             if region:
                 if already_condition_exist==1:
                     filter_query+=' and '            
 
-                filter_query+=" dc2.country = '"+str(region)+"'"
+                filter_query+=f''' dc2.country in  ('{str("','".join(list(region))) }') '''
                 already_condition_exist=1
-
-        print(filter_query)
+                
+        print(filter_query)    
         filter_query_df=new_dbobj.read_table(filter_query)
         return_dict['total_record']=list(filter_query_df['total_record'])[0]
         return return_dict
