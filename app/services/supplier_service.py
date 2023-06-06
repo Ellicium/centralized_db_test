@@ -141,193 +141,14 @@ def countrywise_supplier_count(freetext, level_1, level_2,level_3, dbobj):
 
 
 
-def return_nullif_none(supplier,category,region,level_1,level_2,level_3,text):
+def return_nullif_none(supplier,region):
     if str(supplier).lower().strip()=='none':
         supplier=None
-    if str(category).lower().strip()=='none':
-        category=None
     if str(region).lower().strip()=='none':
         region=None
-    if str(level_1).lower().strip()=='none':
-        level_1=None
-    if str(level_2).lower().strip()=='none':
-        level_2=None
-    if str(level_3).lower().strip()=='none':
-        level_3=None
-    if str(text).lower().strip()=='none':
-        text=None
     
-    return supplier,category,region,level_1,level_2,level_3,text
+    return supplier,region
         
-
-def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,category,region,level_1,level_2,level_3,text,page_number,page_size):
-    try:
-        supplier,category,region,level_1,level_2,level_3,text=return_nullif_none(supplier,category,region,level_1,level_2,level_3,text)
-        return_dict={}
-        supplier_info_query=f'''select
-    ds.ap_supplier_id,
-    ds.name as supplier_name , 
-    dc2.country ,
-    dsi.Supplier_Capability as supplier_capability,
-    dcc4.name as level1,
-    dcc5.name as level2,
-    dcc6.name as level3
-    from {sqlSchemaName}.dim_supplier ds 
-    left join {sqlSchemaName}.dim_supplier_info dsi
-    on ds.id= dsi.supplier_id 
-    left join {sqlSchemaName}.address_supplier_mapping asm 
-    on asm.supplier_id = ds.id 
-    left join {sqlSchemaName}.dim_address dc 
-    on asm.address_id = dc.id 
-    left join {sqlSchemaName}.dim_country dc2 
-    on dc.country_id = dc2.id 
-    left join {sqlSchemaName}.category_supplier_mapping csm 
-    on csm.supplier_id =ds.id 
-    left join {sqlSchemaName}.dim_category_level dcl 
-    on dcl.id = csm.category_level_id 
-    left join {sqlSchemaName}.dim_category dcc4
-    on dcc4.id =dcl.level_1_category_id 
-    left join {sqlSchemaName}.dim_category dcc5
-    on dcc5.id =dcl.level_2_category_id
-    left join {sqlSchemaName}.dim_category dcc6
-    on dcc6.id =dcl.level_3_category_id
-    '''
-
-        flag=any((supplier,category,region,level_1,level_2,level_3,text))
-
-        already_condition_exist=0
-        
-        if flag:
-            supplier_info_query+=' where '        
-            if supplier:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" ds.name = '"+str(supplier)+"'"
-                already_condition_exist=1
-
-            if region:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dc2.country = '"+str(region)+"'"
-                already_condition_exist=1
-
-            if category:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dsi.Key_Categories = '"+str(category)+"'"
-                already_condition_exist=1
-
-            if level_1:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dcc4.name = '"+str(level_1)+"'"
-                already_condition_exist=1
-
-            if level_2:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dcc5.name = '"+str(level_2)+"'"
-                already_condition_exist=1
-
-            if level_3:
-                print('level_3_type',type(level_3))
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dcc6.name = '"+str(level_3)+"'"
-                already_condition_exist=1
-
-            if text:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=f''' LOWER(ds.name) like '{text}'
-                          or LOWER(dcc4.name) like '{text}'
-                          or LOWER(dcc5.name) like '{text}' 
-                          or LOWER(dcc6.name) like '{text}' '''            
-
-                already_condition_exist=1
-        
-        supplier_info_query+=f''' order by ds.id 
-        offset {page_number*page_size} rows
-        FETCH next {page_size} rows only '''
-
-        supplier_info_query+=';'
-
-        print(supplier_info_query)
-
-        suppliers_df=new_dbobj.read_table(supplier_info_query).drop_duplicates()
-
-        suppliers_df_data=suppliers_df.to_dict('records')    
-        
-        return_dict['data']=suppliers_df_data
-
-        filter_query=f'''select
-        count(*) as total_record
-        from {sqlSchemaName}.dim_supplier ds
-        left join {sqlSchemaName}.category_supplier_mapping csm
-        on csm.supplier_id =ds.id
-        left join {sqlSchemaName}.dim_category_level dcl
-        on dcl.id = csm.category_level_id
-        left join {sqlSchemaName}.dim_category dcc4
-        on dcc4.id =dcl.level_1_category_id
-        left join {sqlSchemaName}.dim_category dcc5
-        on dcc5.id =dcl.level_2_category_id
-        left join {sqlSchemaName}.dim_category dcc6
-        on dcc6.id =dcl.level_3_category_id
-        '''
-        filter_query_flag=any((level_1,level_2,level_3,text))
-
-        already_condition_exist_filter=0
-
-        if filter_query_flag:
-            filter_query+=' where '
-
-            if level_1:
-                if already_condition_exist_filter==1:
-                    filter_query+=' and '            
-
-                filter_query+=" dcc4.name = '"+str(level_1)+"'"
-                already_condition_exist_filter=1
-
-            if level_2:
-                if already_condition_exist_filter==1:
-                    filter_query+=' and '            
-
-                filter_query+=" dcc5.name = '"+str(level_2)+"'"
-                already_condition_exist_filter=1
-
-            if level_3:
-                if already_condition_exist_filter==1:
-                    filter_query+=' and '            
-
-                filter_query+=" dcc6.name = '"+str(level_3)+"'"
-                already_condition_exist_filter=1
-
-            if text:
-                if already_condition_exist_filter==1:
-                    filter_query+=' and '            
-
-                filter_query+=f''' LOWER(ds.name) like '{text}'
-                          or LOWER(dcc4.name) like '{text}'
-                          or LOWER(dcc5.name) like '{text}' 
-                          or LOWER(dcc6.name) like '{text}' '''            
-                already_condition_exist_filter=1
-
-        filter_query+=';'        
-        print(filter_query)
-        filter_query_df=new_dbobj.read_table(filter_query)
-        return_dict['total_record']=list(filter_query_df['total_record'])[0]
-        return return_dict
-    except Exception as e:
-        logger.error(e)
-        return None
-
 
 def return_null_if_none_category(level_1,level_2,level_3,category_text):
     if str(level_1).lower().strip()=='none':
@@ -497,12 +318,12 @@ def get_unique_country(new_dbobj,schema_name):
 
 
 
-def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,category,region,level_1,level_2,level_3,text,page_number,page_size):
+def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,region,page_number,page_size):
     try:
-        supplier,category,region,level_1,level_2,level_3,text=return_nullif_none(supplier,category,region,level_1,level_2,level_3,text)
+        supplier,region=return_nullif_none(supplier,region)
         return_dict={}
         supplier_info_query=f'''select
-    ds.ap_supplier_id as id,
+    ds.ap_supplier_id as Supplier_ID,
     ds.name as Supplier_Name , 
     dc2.country as Country_Region ,
     dsi.Supplier_Capability,
@@ -530,69 +351,33 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
     on dcc6.id =dcl.level_3_category_id
     '''
 
-        flag=any((supplier,category,region,level_1,level_2,level_3,text))
+        flag=any((supplier,region))
 
         already_condition_exist=0
         
+        print('supplier',supplier)
         if flag:
             supplier_info_query+=' where '        
             if supplier:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" ds.name = '"+str(supplier)+"'"
+                supplier_info_query+=f''' '{str(supplier)}' in (ds.name,dcc4.name,dcc5.name,dcc6.name,ds.ap_supplier_id,dsi.supplier_capability)'''
                 already_condition_exist=1
 
             if region:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" dc2.country = '"+str(region)+"'"
+                print(type(region))
+                region = "','".join(list(region))
+                supplier_info_query+=" dc2.country in ('"+str(region)+"')"
                 already_condition_exist=1
 
-            if category:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dsi.Key_Categories = '"+str(category)+"'"
-                already_condition_exist=1
-
-            if level_1:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dcc4.name = '"+str(level_1)+"'"
-                already_condition_exist=1
-
-            if level_2:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dcc5.name = '"+str(level_2)+"'"
-                already_condition_exist=1
-
-            if level_3:
-                print('level_3_type',type(level_3))
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=" dcc6.name = '"+str(level_3)+"'"
-                already_condition_exist=1
-
-            if text:
-                if already_condition_exist==1:
-                    supplier_info_query+=' and '            
-
-                supplier_info_query+=f''' LOWER(ds.name) like '{text}'
-                          or LOWER(dcc4.name) like '{text}'
-                          or LOWER(dcc5.name) like '{text}' 
-                          or LOWER(dcc6.name) like '{text}' '''            
-
-                already_condition_exist=1
-        
-        supplier_info_query+=f''' order by ds.id 
-        offset {page_number*page_size} rows
-        FETCH next {page_size} rows only '''
+        if region is None and supplier is None:
+            supplier_info_query+=f''' order by ds.id 
+            offset {page_number*page_size} rows
+            FETCH next {page_size} rows only '''
 
         supplier_info_query+=';'
 
@@ -605,58 +390,48 @@ def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,
         return_dict['data']=suppliers_df_data
 
         filter_query=f'''select
-        count(*) as total_record
-        from {sqlSchemaName}.dim_supplier ds
-        left join {sqlSchemaName}.category_supplier_mapping csm
-        on csm.supplier_id =ds.id
-        left join {sqlSchemaName}.dim_category_level dcl
-        on dcl.id = csm.category_level_id
-        left join {sqlSchemaName}.dim_category dcc4
-        on dcc4.id =dcl.level_1_category_id
-        left join {sqlSchemaName}.dim_category dcc5
-        on dcc5.id =dcl.level_2_category_id
-        left join {sqlSchemaName}.dim_category dcc6
-        on dcc6.id =dcl.level_3_category_id
-        '''
-        filter_query_flag=any((level_1,level_2,level_3,text))
+    count(*) as total_record
+    from {sqlSchemaName}.dim_supplier ds 
+    left join {sqlSchemaName}.dim_supplier_info dsi
+    on ds.id= dsi.supplier_id 
+    left join {sqlSchemaName}.address_supplier_mapping asm 
+    on asm.supplier_id = ds.id 
+    left join {sqlSchemaName}.dim_address dc 
+    on asm.address_id = dc.id 
+    left join {sqlSchemaName}.dim_country dc2 
+    on dc.country_id = dc2.id 
+    left join {sqlSchemaName}.category_supplier_mapping csm 
+    on csm.supplier_id =ds.id 
+    left join {sqlSchemaName}.dim_category_level dcl 
+    on dcl.id = csm.category_level_id 
+    left join {sqlSchemaName}.dim_category dcc4
+    on dcc4.id =dcl.level_1_category_id 
+    left join {sqlSchemaName}.dim_category dcc5
+    on dcc5.id =dcl.level_2_category_id
+    left join {sqlSchemaName}.dim_category dcc6
+    on dcc6.id =dcl.level_3_category_id
+    '''
 
-        already_condition_exist_filter=0
+        flag=any((supplier,region))
 
-        if filter_query_flag:
-            filter_query+=' where '
-
-            if level_1:
-                if already_condition_exist_filter==1:
+        already_condition_exist=0
+        
+        if flag:
+            filter_query+=' where '        
+            if supplier:
+                if already_condition_exist==1:
                     filter_query+=' and '            
 
-                filter_query+=" dcc4.name = '"+str(level_1)+"'"
-                already_condition_exist_filter=1
+                filter_query+=" ds.name = '"+str(supplier)+"'"
+                already_condition_exist=1
 
-            if level_2:
-                if already_condition_exist_filter==1:
+            if region:
+                if already_condition_exist==1:
                     filter_query+=' and '            
 
-                filter_query+=" dcc5.name = '"+str(level_2)+"'"
-                already_condition_exist_filter=1
+                filter_query+=" dc2.country = '"+str(region)+"'"
+                already_condition_exist=1
 
-            if level_3:
-                if already_condition_exist_filter==1:
-                    filter_query+=' and '            
-
-                filter_query+=" dcc6.name = '"+str(level_3)+"'"
-                already_condition_exist_filter=1
-
-            if text:
-                if already_condition_exist_filter==1:
-                    filter_query+=' and '            
-
-                filter_query+=f''' LOWER(ds.name) like '{text}'
-                          or LOWER(dcc4.name) like '{text}'
-                          or LOWER(dcc5.name) like '{text}' 
-                          or LOWER(dcc6.name) like '{text}' '''            
-                already_condition_exist_filter=1
-
-        filter_query+=';'        
         print(filter_query)
         filter_query_df=new_dbobj.read_table(filter_query)
         return_dict['total_record']=list(filter_query_df['total_record'])[0]

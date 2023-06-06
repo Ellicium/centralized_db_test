@@ -43,11 +43,11 @@ async def get_filters_api():
         logger.error("get_filters failed",exc_info=e)
 
 @router.post("/suppliers/get-suppliers-information")
-async def search_suppliers_get_suppliers_information_api_fun(apipostschema:SupplierInfo):
+async def search_suppliers_get_suppliers_information_api_fun(apipostschema:SupplierInfoCountry):
     try:
         set_env_var()
         new_dbobj=database()
-        return search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,apipostschema.supplier,apipostschema.category,apipostschema.region,apipostschema.level_1,apipostschema.level_2,apipostschema.level_3,apipostschema.text,apipostschema.page_number,apipostschema.page_size)
+        return search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,apipostschema.text,apipostschema.region,apipostschema.page_number,apipostschema.page_size)
     except Exception as e:
         logger.error(e)
         print(e)

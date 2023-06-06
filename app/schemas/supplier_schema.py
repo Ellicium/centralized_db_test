@@ -26,8 +26,8 @@ class SupplierInfo(BaseModel):
     
 
 class SupplierInfoCountry(BaseModel):
-    supplier : Optional[str] = None
-    country: Optional[List[str]] = None
+    text : Optional[str] = None
+    region: Optional[List[str]] = None
     page_number: Optional[int] = None
     page_size: Optional[int] = None
 
@@ -45,6 +45,10 @@ class SupplierCategoryWise(BaseModel):
     level_2 :Optional[str] = None
     level_3 :Optional[str] = None
     category_text :Optional[str] = None
+
+# class SupplierCategoryWise(BaseModel):
+#     supplier : Optional[str] = None
+#     region: Optional[List[str]] = None
 
 class SupplierDetails(BaseModel):
     supplier_id :Optional[int] = None
