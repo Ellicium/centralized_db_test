@@ -318,11 +318,13 @@ def get_unique_country(new_dbobj,schema_name):
 
 
 
-def search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,supplier,region,page_number,page_size):
+def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_number,page_size):
     try:
+        set_env_var()
         supplier,region=return_nullif_none(supplier,region)
         return_dict={}
         supplier_info_query=f'''select
+        ds.id,
     ds.ap_supplier_id as Supplier_ID,
     ds.name as Supplier_Name , 
     dc2.country as Country_Region ,

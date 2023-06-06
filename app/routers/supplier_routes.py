@@ -45,9 +45,9 @@ async def get_filters_api():
 @router.post("/suppliers/get-suppliers-information")
 async def search_suppliers_get_suppliers_information_api_fun(apipostschema:SupplierInfoCountry):
     try:
-        set_env_var()
-        new_dbobj=database()
-        return search_suppliers_get_suppliers_information(new_dbobj,sqlSchemaName,apipostschema.text,apipostschema.region,apipostschema.page_number,apipostschema.page_size)
+        # set_env_var()
+        # new_dbobj=database()
+        return search_suppliers_get_suppliers_information(dbobj,apipostschema.text,apipostschema.region,apipostschema.page_number,apipostschema.page_size)
     except Exception as e:
         logger.error(e)
         print(e)
@@ -56,7 +56,6 @@ async def search_suppliers_get_suppliers_information_api_fun(apipostschema:Suppl
 @router.post("/suppliers/get-supplier-catogarywise")
 async def search_suppliers_get_supplier_catogarywise_api_fun(apipostschema:SupplierCategoryWise):
     try:
-        set_env_var()
         new_dbobj=database()
         return get_categorywise_count(new_dbobj,sqlSchemaName,apipostschema.level_1,apipostschema.level_2,apipostschema.level_3,apipostschema.category_text)
     except Exception as e:
