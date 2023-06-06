@@ -223,7 +223,7 @@ def supplier_details_api(new_dbobj,supplier_id):
         # if supplier_id=='0':
         #     supplier_id=None
         sql_query_for_data_for_supplier_id=f'''select
-        q3.supplier_name ,q1.level1 ,q1.level2,q1.level3,q2.supplier_additional_info,q2.supplier_capability ,q2.additionalNotes as additional_notes,q3.country ,q3.address ,q3.email ,q3.website,q3.phone
+        q3.supplier_name as Supplier_Name,q1.level1 as Level_1,q1.level2 as Level_2,q1.level3 as Level_3,q2.supplier_additional_info as Supplier_Additional_Info,q2.supplier_capability as Supplier_Capability,q3.country as Country_Region,q3.address as Address,q3.email as Email,q3.website as Website,q3.phone as Phone
         from
         (
         select
