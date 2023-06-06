@@ -12,16 +12,9 @@ logger.handlers = gunicorn_logger.handlers
 logger.setLevel(gunicorn_logger.level)
 load_dotenv()
 
-def set_env_var():
-    global sqlUserName,sqlPassword,sqlDatabaseName,sqlServerName,sqlSchemaName
-    sqlUserName=os.getenv("sqlUserName")
-    sqlPassword=os.getenv("sqlPassword")
-    sqlDatabaseName=os.getenv("sqlDatabaseName")
-    sqlServerName=os.getenv("sqlServerName")
-    sqlSchemaName=os.getenv("sqlSchemaName")
 
 router = APIRouter()
-set_env_var()
+
 dbobj=database()
 
 @router.post("/suppliers/get-supplier-count", response_model=SupplierCountResponse)
