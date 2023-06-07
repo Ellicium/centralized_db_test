@@ -339,7 +339,7 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
 	q2.Level_3
 from
 	(
-	select
+	select distinct
 		ds.id,
 		ds.ap_supplier_id as Supplier_ID,
 		ds.name as Supplier_Name ,
@@ -368,7 +368,7 @@ on
 )ds
 left join
 (
-	select
+	select distinct
 		ds.id,
 		dsi.Supplier_Capability,
 		dcc4.name as Level_1,
@@ -415,7 +415,7 @@ on
 	q2.Level_2,
 	q2.Level_3    
 from  
-    (select    
+    (select distinct 
 	ds.id,
 	ds.ap_supplier_id as Supplier_ID,
     ds.name as Supplier_Name ,
@@ -433,7 +433,7 @@ where country in ( '{str("','".join(list(region))) }' ))q3
 on q3.id=dc.country_id 
 )ds
 left join 
-(select
+(select distinct
 	ds.id,
     dsi.Supplier_Capability,
     dcc4.name as Level_1,
@@ -500,7 +500,7 @@ where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Su
         filter_query=f'''SELECT 
     count(*) as total_record
 from
-    (select
+    (select distinct
         ds.id,
         ds.ap_supplier_id as Supplier_ID,
     ds.name as Supplier_Name ,
@@ -518,7 +518,7 @@ left join
 on q3.id=dc.country_id
 )ds
 left join
-(select
+(select distinct
         ds.id,
     dsi.Supplier_Capability,
     dcc4.name as Level_1,
