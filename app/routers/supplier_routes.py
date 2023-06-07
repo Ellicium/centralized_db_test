@@ -66,7 +66,7 @@ async def search_suppliers_get_supplier_catogarywise_api_fun(apipostschema:Suppl
 @router.post("/suppliers/get-supplier-details")
 async def search_suppliers_get_supplier_details_api_fun(apipostschema:SupplierDetails):
     try:
-        return supplier_details_api(dbobj,apipostschema.supplier_id)
+        return supplier_details_api(dbobj,apipostschema.supplier_id,apipostschema.supplier_name)
     except Exception as e:
         logger.error(e)
         print(e)

@@ -52,6 +52,7 @@ class SupplierCategoryWise(BaseModel):
 
 class SupplierDetails(BaseModel):
     supplier_id :Optional[int] = None
+    supplier_name:  Optional[str] = None
 
 
 class LevelItem(BaseModel):

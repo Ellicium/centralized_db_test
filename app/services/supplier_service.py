@@ -215,7 +215,7 @@ def get_categorywise_count(new_dbobj,schema_name, level_1,level_2,level_3,catego
         return None
     
 
-def supplier_details_api(new_dbobj,supplier_id):
+def supplier_details_api(new_dbobj,supplier_id,supplier_name):
     try:
         set_env_var()
         schema_name=sqlSchemaName
@@ -264,7 +264,9 @@ def supplier_details_api(new_dbobj,supplier_id):
         on
             ds.id = dsi.supplier_id
         where
-            ds.id = {supplier_id}) q2
+            ds.id = {supplier_id}
+            and 
+            ds.name like '{supplier_name}') q2
         on
         q1.id = q2.id
         join
@@ -326,36 +328,76 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
         set_env_var()
         supplier,region=return_nullif_none(supplier,region)
         return_dict={}
-        supplier_info_query=f'''select
-        ds.id,
-    ds.ap_supplier_id as Supplier_ID,
-    ds.name as Supplier_Name , 
-    dc2.country as Country_Region ,
-    dsi.Supplier_Capability,
-    dcc4.name as Level_1,
-    dcc5.name as Level_2,
-    dcc6.name as Level_3
-    from {sqlSchemaName}.dim_supplier ds 
-    left join {sqlSchemaName}.dim_supplier_info dsi
-    on ds.id= dsi.supplier_id 
-    left join {sqlSchemaName}.address_supplier_mapping asm 
-    on asm.supplier_id = ds.id 
-    left join {sqlSchemaName}.dim_address dc 
-    on asm.address_id = dc.id 
-    left join {sqlSchemaName}.dim_country dc2 
-    on dc.country_id = dc2.id 
-    left join {sqlSchemaName}.category_supplier_mapping csm 
-    on csm.supplier_id =ds.id 
-    left join {sqlSchemaName}.dim_category_level dcl 
-    on dcl.id = csm.category_level_id 
-    left join {sqlSchemaName}.dim_category dcc4
-    on dcc4.id =dcl.level_1_category_id 
-    left join {sqlSchemaName}.dim_category dcc5
-    on dcc5.id =dcl.level_2_category_id
-    left join {sqlSchemaName}.dim_category dcc6
-    on dcc6.id =dcl.level_3_category_id
+        supplier_info_query=f'''SELECT
+	ds.id,
+	ds.Supplier_ID,
+	ds.Supplier_Name,
+	ds.Country_Region,
+	q2.Supplier_Capability,
+	q2.Level_1,
+	q2.Level_2,
+	q2.Level_3
+from
+	(
+	select
+		ds.id,
+		ds.ap_supplier_id as Supplier_ID,
+		ds.name as Supplier_Name ,
+		q3.country as Country_Region
+	from
+		{sqlSchemaName}.dim_supplier ds
+	left join {sqlSchemaName}.dim_supplier_info dsi
+on
+		ds.id = dsi.supplier_id
+	left join {sqlSchemaName}.address_supplier_mapping asm
+on
+		asm.supplier_id = ds.id
+	left join {sqlSchemaName}.dim_address dc
+on
+		asm.address_id = dc.id
+	left join
+(
+		select
+			id,
+			country
+		from
+			{sqlSchemaName}.dim_country dc3
+)q3
+on
+		q3.id = dc.country_id
+)ds
+left join
+(
+	select
+		ds.id,
+		dsi.Supplier_Capability,
+		dcc4.name as Level_1,
+		dcc5.name as Level_2,
+		dcc6.name as Level_3
+	from
+		{sqlSchemaName}.dim_supplier ds
+	left join {sqlSchemaName}.category_supplier_mapping csm
+   on
+		csm.supplier_id = ds.id
+	left join {sqlSchemaName}.dim_category_level dcl
+   on
+		dcl.id = csm.category_level_id
+	left join {sqlSchemaName}.dim_category dcc4
+   on
+		dcc4.id = dcl.level_1_category_id
+	left join {sqlSchemaName}.dim_category dcc5
+   on
+		dcc5.id = dcl.level_2_category_id
+	left join {sqlSchemaName}.dim_category dcc6
+   on
+		dcc6.id = dcl.level_3_category_id
+	left join {sqlSchemaName}.dim_supplier_info dsi
+   on
+		dsi.supplier_id = ds.id
+)q2
+on
+	ds.id = q2.id
     '''
-
         flag=any((supplier,region))
 
         already_condition_exist=0
@@ -412,24 +454,25 @@ from {sqlSchemaName}.dim_supplier ds
     on dsi.supplier_id = ds.id
 )q2
 on ds.id=q2.id
-where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Supplier_Capability)'''
+where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Supplier_Capability) and ds.Country_Region in ( '{str("','".join(list(region))) }' )'''
 
             both_filter_flag=1
             
+
         if flag and both_filter_flag==0:
             supplier_info_query+=' where '        
             if supplier:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=f''' '{str(supplier)}' in (ds.name,dcc4.name,dcc5.name,dcc6.name,ds.ap_supplier_id,dsi.supplier_capability)'''
+                supplier_info_query+=f''' '{str(supplier)}' in (q2.Level_1, q2.Level_2, q2.Level_3, q2.Supplier_Capability, ds.Supplier_ID, ds.Supplier_Name)'''
                 already_condition_exist=1
 
             if region:
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=" dc2.country in ('"+str( "','".join(list(region)))+"')"
+                supplier_info_query+=" ds.Country_Region in ('"+str( "','".join(list(region)))+"')"
                 already_condition_exist=1
 
         if page_size>0:
@@ -454,27 +497,48 @@ where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Su
         
         return_dict['data']=suppliers_df_data
 
-        filter_query=f'''select
+        filter_query=f'''SELECT 
     count(*) as total_record
-    from {sqlSchemaName}.dim_supplier ds 
-    left join {sqlSchemaName}.dim_supplier_info dsi
-    on ds.id= dsi.supplier_id 
-    left join {sqlSchemaName}.address_supplier_mapping asm 
-    on asm.supplier_id = ds.id 
-    left join {sqlSchemaName}.dim_address dc 
-    on asm.address_id = dc.id 
-    left join {sqlSchemaName}.dim_country dc2 
-    on dc.country_id = dc2.id 
-    left join {sqlSchemaName}.category_supplier_mapping csm 
-    on csm.supplier_id =ds.id 
-    left join {sqlSchemaName}.dim_category_level dcl 
-    on dcl.id = csm.category_level_id 
+from
+    (select
+        ds.id,
+        ds.ap_supplier_id as Supplier_ID,
+    ds.name as Supplier_Name ,
+    q3.country as Country_Region
+from {sqlSchemaName}.dim_supplier ds
+left join {sqlSchemaName}.dim_supplier_info dsi
+on ds.id= dsi.supplier_id
+left join {sqlSchemaName}.address_supplier_mapping asm
+on asm.supplier_id = ds.id
+left join {sqlSchemaName}.dim_address dc
+on asm.address_id = dc.id
+left join
+(select id,country from {sqlSchemaName}.dim_country dc3
+)q3
+on q3.id=dc.country_id
+)ds
+left join
+(select
+        ds.id,
+    dsi.Supplier_Capability,
+    dcc4.name as Level_1,
+    dcc5.name as Level_2,
+    dcc6.name as Level_3
+from {sqlSchemaName}.dim_supplier ds
+    left join {sqlSchemaName}.category_supplier_mapping csm
+    on csm.supplier_id =ds.id
+    left join {sqlSchemaName}.dim_category_level dcl
+    on dcl.id = csm.category_level_id
     left join {sqlSchemaName}.dim_category dcc4
-    on dcc4.id =dcl.level_1_category_id 
+    on dcc4.id =dcl.level_1_category_id
     left join {sqlSchemaName}.dim_category dcc5
     on dcc5.id =dcl.level_2_category_id
     left join {sqlSchemaName}.dim_category dcc6
     on dcc6.id =dcl.level_3_category_id
+    left join {sqlSchemaName}.dim_supplier_info dsi
+    on dsi.supplier_id = ds.id
+)q2
+on ds.id=q2.id
     '''
 
         flag=any((supplier,region))
@@ -487,14 +551,14 @@ where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Su
                 if already_condition_exist==1:
                     filter_query+=' and '            
 
-                filter_query+=f''' '{str(supplier)}' in (ds.name,dcc4.name,dcc5.name,dcc6.name,ds.ap_supplier_id,dsi.supplier_capability)'''
+                filter_query+=f''' '{str(supplier)}' in (q2.Level_1,q2.Level_2,q2.Level_3,q2.Supplier_Capability,ds.Supplier_ID,ds.Supplier_Name)'''
                 already_condition_exist=1
 
             if region:
                 if already_condition_exist==1:
                     filter_query+=' and '            
 
-                filter_query+=f''' dc2.country in  ('{str("','".join(list(region))) }') '''
+                filter_query+=f''' ds.Country_Region in  ('{str("','".join(list(region))) }') '''
                 already_condition_exist=1
                 
         print(filter_query)    
