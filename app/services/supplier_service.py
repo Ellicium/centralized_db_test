@@ -357,7 +357,7 @@ on
 		asm.address_id = dc.id
 	left join
 (
-		select
+		select distinct
 			id,
 			country
 		from
@@ -428,7 +428,7 @@ on asm.supplier_id = ds.id
 left join {sqlSchemaName}.dim_address dc
 on asm.address_id = dc.id
 left join 
-(select id,country from {sqlSchemaName}.dim_country dc3
+(select distinct id,country from {sqlSchemaName}.dim_country dc3
 where country in ( '{str("','".join(list(region))) }' ))q3
 on q3.id=dc.country_id 
 )ds
@@ -513,7 +513,7 @@ on asm.supplier_id = ds.id
 left join {sqlSchemaName}.dim_address dc
 on asm.address_id = dc.id
 left join
-(select id,country from {sqlSchemaName}.dim_country dc3
+(select distinct id,country from {sqlSchemaName}.dim_country dc3
 )q3
 on q3.id=dc.country_id
 )ds
