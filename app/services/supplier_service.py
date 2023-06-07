@@ -476,7 +476,13 @@ where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Su
                 already_condition_exist=1
 
         if page_size>0:
-            offset=page_number-1*page_size
+            offset=None
+            if page_number==1:
+                offset=0
+            else:
+                offset=page_number
+            if offset!=0:
+                offset=(page_number-1)*page_size
             if offset<0:
                 offset=0
             supplier_info_query+=f''' order by ds.id 
