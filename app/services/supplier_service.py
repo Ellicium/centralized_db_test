@@ -1,5 +1,5 @@
 import os
-import math
+import math,datetime,pycountry
 import logging
 import pandas as pd
 from time import time
@@ -575,3 +575,76 @@ on ds.id=q2.id
         logger.error(e)
         return None
 
+def get_datetime_attr(pandas_dff):
+    start = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    pandas_dff=pandas_dff.drop_duplicates()
+    pandas_dff['created_date']=start
+    pandas_dff['created_by']='krushna kadam'
+    pandas_dff['updated_date']=start
+    pandas_dff['updated_by']='krushna kadam'
+    return pandas_dff
+
+def get_filter_sql_query(schema_name,table_name,data_dataframe):
+    data_dataframe_dict=data_dataframe.to_dict(orient='records')
+    sql_query=f'''select id from {schema_name}.{table_name} '''
+
+    filter_query =''
+    for dictt in data_dataframe_dict:
+        for key in dictt:
+            if (dictt[key]):
+                if filter_query!='':
+                    filter_query+=' and '
+                else:
+                    filter_query+=' where '
+                filter_query+=f" {key}='{dictt[key]}' "
+    sql_query+=filter_query+' ;'
+    if filter_query!='':
+        return sql_query
+    return None
+
+def get_normalized_id(new_dbobj,table_name,schema_name,data_dataframe):
+    mapping = {country.name.lower().strip(): country.alpha_2 for country in pycountry.countries}
+    sql_query = get_filter_sql_query(schema_name,table_name,data_dataframe)
+    data_dataframe = get_datetime_attr(data_dataframe)
+    sql_data = new_dbobj.read_table(sql_query)
+    if len(sql_data)==0:
+        new_dbobj.insert_data(data_dataframe, table_name ,schema_name)
+        sql_data = new_dbobj.read_table(sql_query)
+    return sql_data['id'][0]
+    
+def insert_suppliers_data_fun(new_dbobj,input_payload):
+        set_env_var()
+        input_payload_list=[]
+        input_payload_list.append(input_payload)
+
+        contact_input_df=pd.DataFrame.from_dict(input_payload_list)
+        for column in contact_input_df:
+            if column not in ['Pin_Code','Phone']:
+                contact_input_df[column]=contact_input_df[column].str.lower()
+
+        city_df = contact_input_df[['City']]
+        city_id = get_normalized_id(new_dbobj,'dim_city',sqlSchemaName,city_df)
+
+        state_df = contact_input_df[['State']]
+        state_id = get_normalized_id(new_dbobj,'dim_state',sqlSchemaName,state_df)
+
+        country_df = contact_input_df[['Country']]
+        country_id = get_normalized_id(new_dbobj,'dim_country',sqlSchemaName,country_df)
+
+        contact_input_df['city_id'] = city_id
+        contact_input_df['state_id'] = state_id
+        contact_input_df['country_id'] = country_id
+        contact_input_df.rename(columns = {'Pin_Code':'pincode'}, inplace = True)
+        database_insert_df=contact_input_df[['address', 'pincode', 'city_id', 'state_id', 'country_id']]
+        address_id=get_normalized_id(new_dbobj,'dim_address',sqlSchemaName,database_insert_df)
+        address_supplier_mapping=contact_input_df[['supplier_id']]
+        address_supplier_mapping['address_id']=address_id
+        address_supplier_mapping_id = get_normalized_id(new_dbobj,'address_supplier_mapping',sqlSchemaName,address_supplier_mapping)
+
+        contact_df = contact_input_df[['Name', 'Role','Email', 'Phone', 'website','supplier_id']]
+        contact_df.rename(columns = {'Name':'key_contact_name','Email':'email','Phone':'phone','Role':'person_role'}, inplace = True)
+        contact_df['address_supplier_mapping_id']=address_supplier_mapping_id
+
+        contact_id = get_normalized_id(new_dbobj,'dim_contact',sqlSchemaName,contact_df)
+        return 'API Execution Successful'
+    
