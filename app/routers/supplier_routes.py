@@ -12,7 +12,6 @@ logger.handlers = gunicorn_logger.handlers
 logger.setLevel(gunicorn_logger.level)
 load_dotenv()
 
-
 router = APIRouter()
 
 dbobj=database()
