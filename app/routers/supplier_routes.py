@@ -44,7 +44,7 @@ async def get_filters_api():
 @router.post("/suppliers/get-suppliers-information")
 async def search_suppliers_get_suppliers_information_api_fun(apipostschema:SupplierInfoCountry):
     try:
-        return search_suppliers_get_suppliers_information(dbobj,apipostschema.text,apipostschema.region,apipostschema.page_number,apipostschema.page_size)
+        return search_suppliers_get_suppliers_information(dbobj,apipostschema.text,apipostschema.region,apipostschema.page_number,apipostschema.page_size,apipostschema.preffered_flag)
     except Exception as e:
         logger.error(e)
         print(e)

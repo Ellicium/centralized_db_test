@@ -30,6 +30,7 @@ class SupplierInfoCountry(BaseModel):
     region: Optional[List[str]] = None
     page_number: Optional[int] = None
     page_size: Optional[int] = None
+    preffered_flag: Optional[int] = None
 
 class SupplierInfoResponse(BaseModel):
     ap_supplier_id: Optional[str] = None

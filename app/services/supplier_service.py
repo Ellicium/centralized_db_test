@@ -323,11 +323,18 @@ def get_unique_country(new_dbobj):
 
 
 
-def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_number,page_size):
+def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_number,page_size,preffered_flag):
     try:
         set_env_var()
         supplier,region=return_nullif_none(supplier,region)
         return_dict={}
+
+        preferred_query= ''
+        
+        if preffered_flag==1:
+
+            preferred_query='where ds.ap_preferred =1'
+
         supplier_info_query=f'''SELECT
 	ds.id,
 	ds.Supplier_ID,
@@ -336,7 +343,8 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
 	q2.Supplier_Capability,
 	q2.Level_1,
 	q2.Level_2,
-	q2.Level_3
+	q2.Level_3,
+	q2.email
 from
 	(
 	select distinct
@@ -365,15 +373,18 @@ on
 )q3
 on
 		q3.id = dc.country_id
+		{preferred_query}
+
 )ds
-left join
+inner join
 (
 	select distinct
 		ds.id,
 		dsi.Supplier_Capability,
 		dcc4.name as Level_1,
 		dcc5.name as Level_2,
-		dcc6.name as Level_3
+		dcc6.name as Level_3,
+		dc2.email
 	from
 		{sqlSchemaName}.dim_supplier ds
 	left join {sqlSchemaName}.category_supplier_mapping csm
@@ -394,6 +405,11 @@ left join
 	left join {sqlSchemaName}.dim_supplier_info dsi
    on
 		dsi.supplier_id = ds.id
+	left join {sqlSchemaName}.dim_contact dc2 
+	on 
+		dc2.supplier_id = ds.id 
+	where dc2.email is not null
+	and dsi.delete_flag is null
 )q2
 on
 	ds.id = q2.id
@@ -413,7 +429,8 @@ on
 	q2.Supplier_Capability,
 	q2.Level_1,
 	q2.Level_2,
-	q2.Level_3    
+	q2.Level_3,
+    q2.email    
 from  
     (select distinct 
 	ds.id,
@@ -431,14 +448,16 @@ left join
 (select distinct id,country from {sqlSchemaName}.dim_country dc3
 where country in ( '{str("','".join(list(region))) }' ))q3
 on q3.id=dc.country_id 
+{preferred_query}
 )ds
-left join 
+inner join 
 (select distinct
 	ds.id,
     dsi.Supplier_Capability,
     dcc4.name as Level_1,
     dcc5.name as Level_2,
-    dcc6.name as Level_3
+    dcc6.name as Level_3,
+    dc2.email
 from {sqlSchemaName}.dim_supplier ds 
     left join {sqlSchemaName}.category_supplier_mapping csm
     on csm.supplier_id =ds.id
@@ -452,6 +471,12 @@ from {sqlSchemaName}.dim_supplier ds
     on dcc6.id =dcl.level_3_category_id
     left join {sqlSchemaName}.dim_supplier_info dsi 
     on dsi.supplier_id = ds.id
+    	left join {sqlSchemaName}.dim_contact dc2 
+	on 
+		dc2.supplier_id = ds.id 
+	where dc2.email is not null
+	and dsi.delete_flag is null
+
 )q2
 on ds.id=q2.id
 where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Supplier_Capability) and ds.Country_Region in ( '{str("','".join(list(region))) }' )'''
@@ -522,14 +547,16 @@ left join
 (select distinct id,country from {sqlSchemaName}.dim_country dc3
 )q3
 on q3.id=dc.country_id
+{preferred_query}
 )ds
-left join
+inner join
 (select distinct
         ds.id,
     dsi.Supplier_Capability,
     dcc4.name as Level_1,
     dcc5.name as Level_2,
-    dcc6.name as Level_3
+    dcc6.name as Level_3,
+    dc2.email
 from {sqlSchemaName}.dim_supplier ds
     left join {sqlSchemaName}.category_supplier_mapping csm
     on csm.supplier_id =ds.id
@@ -543,6 +570,11 @@ from {sqlSchemaName}.dim_supplier ds
     on dcc6.id =dcl.level_3_category_id
     left join {sqlSchemaName}.dim_supplier_info dsi
     on dsi.supplier_id = ds.id
+    	left join {sqlSchemaName}.dim_contact dc2 
+	on 
+		dc2.supplier_id = ds.id 
+	where dc2.email is not null
+	and dsi.delete_flag is null
 )q2
 on ds.id=q2.id
     '''
