@@ -59,6 +59,13 @@ class SupplierDetails(BaseModel):
 class UpdateSupplierDetails(BaseModel):
     input_payload :Optional[list[dict]] = None
 
+
+class allSupplierDetails(BaseModel):
+    supplier_id_list :Optional[list[int]] = None
+
+
+
+
 class LevelItem(BaseModel):
     label: Optional[str] = None
     value: Optional[str] = None

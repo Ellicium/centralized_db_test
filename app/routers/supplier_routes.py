@@ -4,8 +4,8 @@ from fastapi import FastAPI, Request, Form, Response, APIRouter
 from fastapi.logger import logger
 from dotenv import load_dotenv
 from ..config.db_config import database
-from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails
-from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun
+from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails
+from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun
 
 gunicorn_logger = logging.getLogger('gunicorn.error')
 logger.handlers = gunicorn_logger.handlers
@@ -80,3 +80,11 @@ async def insert_suppliers_info(apipostschema:UpdateSupplierDetails):
         print(e)
         return None
     
+@router.post("/suppliers/get-all-suppliers-details")
+async def all_Suppliers_details(apipostschema:allSupplierDetails):
+    try:
+        return get_all_suppliers_data_fun(dbobj,apipostschema.supplier_id_list)
+    except Exception as e:
+        logger.error(e)
+        print(e)
+        return None
