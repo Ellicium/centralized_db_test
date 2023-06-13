@@ -330,7 +330,7 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
         return_dict={}
 
         preferred_query= ''
-        
+
         if preffered_flag==1:
 
             preferred_query='where ds.ap_preferred =1'
@@ -634,12 +634,19 @@ def get_filter_sql_query(schema_name,table_name,data_dataframe):
         return sql_query
     return None
 
+def soft_delete_function(new_dbobj,table_name,schema_name,data_dataframe):
+    if str(table_name).strip().lower()=='dim_supplier_info':
+        soft_delete_query=f''' update {schema_name}.dim_supplier_info set delete_flag = 1 where supplier_id = {data_dataframe['supplier_id'][0]}'''
+        new_dbobj.execute_query(soft_delete_query)
+    # elif str(table_name).strip().lower()=='dim_supplier_info':
+
 def get_normalized_id(new_dbobj,table_name,schema_name,data_dataframe):
     mapping = {country.name.lower().strip(): country.alpha_2 for country in pycountry.countries}
     sql_query = get_filter_sql_query(schema_name,table_name,data_dataframe)
     data_dataframe = get_datetime_attr(data_dataframe)
     sql_data = new_dbobj.read_table(sql_query)
     if len(sql_data)==0:
+        soft_delete_function(new_dbobj,table_name,schema_name,data_dataframe)
         new_dbobj.insert_data(data_dataframe, table_name ,schema_name)
         sql_data = new_dbobj.read_table(sql_query)
     return sql_data['id'][0]
