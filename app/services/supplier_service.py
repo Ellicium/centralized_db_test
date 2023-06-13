@@ -524,7 +524,7 @@ where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Su
 
         print(supplier_info_query)
 
-        suppliers_df=new_dbobj.read_table(supplier_info_query).drop_duplicates()
+        suppliers_df=new_dbobj.read_table(supplier_info_query).drop_duplicates().drop(['id'], axis=1)
 
         for column in suppliers_df:
             if column not in ['id','Supplier_ID']:
