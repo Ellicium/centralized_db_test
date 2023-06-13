@@ -779,7 +779,7 @@ def get_all_suppliers_data_fun(new_dbobj,supplier_id_list):
         left join {schema_name}.dim_contact dc3 
         on
             dc3.supplier_id = ds.id
-            and dc3.address_supplier_mapping_id = asm.address_id
+            and dc3.address_supplier_mapping_id = asm.id
         where
             ds.id in {supplier_id}
         ) q3
