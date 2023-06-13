@@ -1,9 +1,14 @@
 import os
 import math,datetime,pycountry
-import logging
+import logging,re
 import pandas as pd
 from time import time
 from dotenv import load_dotenv
+from fastapi.logger import logger
+import spacy
+# from textblob import TextBlob
+nlp = spacy.load('en_core_web_sm')
+import logging
 from fastapi.logger import logger
 
 gunicorn_logger = logging.getLogger('gunicorn.error')
@@ -326,11 +331,12 @@ def get_unique_country(new_dbobj):
 def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_number,page_size,preffered_flag):
     try:
         set_env_var()
+        if supplier:
+            supplier=clean_main(supplier)
         supplier,region=return_nullif_none(supplier,region)
         return_dict={}
 
         preferred_query= ''
-
         if preffered_flag==1:
 
             preferred_query='where ds.ap_preferred =1'
@@ -794,3 +800,62 @@ def get_all_suppliers_data_fun(new_dbobj,supplier_id_list):
         logger.error(e)
         print(e)
         return None
+
+
+def extract_entities(text):
+    try:
+        doc = nlp(text)
+        entities = []
+        # print(doc.ents)
+        for ent in doc.ents:
+            # print(ent)
+            if ent.label_ in ['GPE', 'LOC']:  # Filter entities labeled as geographical or location entities
+                entities.append(ent.text)
+        logger.info('Location extraction from free search complete')
+        # print('Location extraction from free search complete')
+        return entities
+    except Exception as e:
+        print('Location Extraction from free search failed',e)
+        logger.error('Location Extraction from free search failed',e)
+
+
+
+def remove_substrings(string, substrings):
+    pattern = '|'.join(map(re.escape, substrings))
+    return re.sub(pattern, '', string)
+
+def find_industry_in_text(result):
+    industry_list = result.split(",")
+    industry_list = [item.strip() for item in industry_list if item.strip()]
+    return industry_list
+
+def loc_industry_standardisation(country_,industry_names):
+    user_input_industry_data=pd.DataFrame()
+    user_input_country_data=pd.DataFrame()
+    user_input_industry_data['industry']=industry_names
+    user_input_industry_data=user_input_industry_data.sort_values(by=['industry'])
+    user_input_country_data['country']=country_
+    user_input_country_data=user_input_country_data.sort_values(by=['country'])
+    user_input_industry_data['key'] = 1
+    user_input_country_data['key'] = 1
+    user_input_data = pd.merge(user_input_industry_data, user_input_country_data, on='key').drop('key', axis=1)   
+    print(user_input_data)
+    return user_input_data
+
+
+
+def clean_main(text):
+    # Check if user input are valid
+    # text=spell_check_input(text)
+    country_=extract_entities(text)
+    print(country_)
+    if len(country_)==0:
+        country_=[None]
+        result=text
+    else:
+        result = remove_substrings(text, country_)
+    industry_names=find_industry_in_text(result)
+    print(country_,industry_names)
+    user_input_data=loc_industry_standardisation(country_,industry_names)
+    return user_input_data['industry'][0]
+    
