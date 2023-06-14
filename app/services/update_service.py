@@ -2,6 +2,7 @@ import os
 import math
 import logging
 import pandas as pd
+pd.set_option('display.max_columns', None)
 from time import time
 import datetime
 from dotenv import load_dotenv
@@ -76,5 +77,46 @@ def set_supplier_details_func(object,dbobj):
             #                  '''
             # updateInforQueryResult=dbobj.execute_query(updateInforQuery)
             return 'No Supplier Found'
+    except Exception as e:
+        logger.error("get_filters def failed",exc_info=e)
+def get_supplier_contact_func(object,dbobj):
+    try:
+        set_env_var()
+        
+        lev1=f'''select asm.id as 'address_supplier_mapping_id' ,da.address , 
+(SELECT city from {sqlSchemaName}.dim_city where id=da.city_id) as 'city',
+(SELECT state from {sqlSchemaName}.dim_state ds  where id=da.state_id) as 'state',
+(SELECT country from {sqlSchemaName}.dim_country where id=da.country_id) as 'country'
+from {sqlSchemaName}.address_supplier_mapping asm 
+inner join {sqlSchemaName}.dim_address da on asm.address_id = da.id 
+where asm.supplier_id = {object.Shipper_Id}'''
+        lev2=f'''SELECT dc.address_supplier_mapping_id,dc.id as 'contact_id' ,dc.phone ,dc.email ,dc.website 
+from {sqlSchemaName}.dim_contact dc 
+WHERE dc.supplier_id = {object.Shipper_Id}'''
+        level1Data = dbobj.read_table(lev1)
+        level2Data = dbobj.read_table(lev2)
+#         level2Data = level2Data.groupby('address_supplier_mapping_id').agg({
+#     'phone': lambda x: list(set(x)),
+#     'email': lambda x: list(set(x)),
+#     'website': 'first'
+# }).reset_index()
+        contact_dict = {}
+        for index, row in level2Data.iterrows():
+            address_id = row['address_supplier_mapping_id']
+            contact_data = {
+                'contact_id': row['contact_id'],
+                'phone': row['phone'],
+                'email': row['email'],
+                'website': row['website']
+            }
+            if address_id not in contact_dict:
+                contact_dict[address_id] = []
+            contact_dict[address_id].append(contact_data)
+
+        # Create a DataFrame from the contact_dict
+        contact_df = pd.DataFrame(contact_dict.items(), columns=['address_supplier_mapping_id', 'contact_details'])
+        merged_df = contact_df.merge(level1Data, on='address_supplier_mapping_id')
+        return merged_df.to_dict(orient='records')
+        
     except Exception as e:
         logger.error("get_filters def failed",exc_info=e)

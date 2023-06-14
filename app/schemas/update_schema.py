@@ -9,3 +9,6 @@ class UpdateSupplier(BaseModel):
     Supplier_Type:Optional[str] = None
     Preferred_Supplier:Optional[int] = None
     User:Optional[str] = None
+class getSupplierContact(BaseModel):
+    Shipper_Id:Optional[int] = None
+    
