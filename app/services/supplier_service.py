@@ -416,6 +416,7 @@ inner join
 		dc2.supplier_id = ds.id 
 	where dc2.email is not null
 	and dsi.delete_flag is null
+    and ds.ap_preferred =1
 )q2
 on
 	ds.id = q2.id
@@ -482,6 +483,7 @@ from {sqlSchemaName}.dim_supplier ds
 		dc2.supplier_id = ds.id 
 	where dc2.email is not null
 	and dsi.delete_flag is null
+    and ds.ap_preferred =1
 
 )q2
 on ds.id=q2.id
@@ -581,6 +583,7 @@ from {sqlSchemaName}.dim_supplier ds
 		dc2.supplier_id = ds.id 
 	where dc2.email is not null
 	and dsi.delete_flag is null
+    and ds.ap_preferred =1
 )q2
 on ds.id=q2.id
     '''
@@ -858,4 +861,115 @@ def clean_main(text):
     print(country_,industry_names)
     user_input_data=loc_industry_standardisation(country_,industry_names)
     return user_input_data['industry'][0]
+
+def update_contact_info_fun(new_dbobj,contact_df):
     
+    if 'phone' in contact_df.columns and 'contact_id' in contact_df.columns :
+        if contact_df['phone'][0] and contact_df['contact_id'][0]:
+            sql_query_phone=f''' update {sqlSchemaName}.dim_contact set phone = '{contact_df['phone'][0]}' where id =  {contact_df['contact_id'][0]}'''
+            print(sql_query_phone)
+            new_dbobj.execute_query(sql_query_phone)
+
+    if 'email' in contact_df.columns and 'contact_id' in contact_df.columns :
+        if contact_df['email'][0] and contact_df['contact_id'][0]:
+            sql_query_email=f''' update {sqlSchemaName}.dim_contact set email = '{contact_df['email'][0]}' where id =  {contact_df['contact_id'][0]}'''
+            print(sql_query_email)
+            new_dbobj.execute_query(sql_query_email)
+
+    if 'website' in contact_df.columns and 'contact_id' in contact_df.columns :
+        if contact_df['website'][0] and contact_df['contact_id'][0]:
+            sql_query_website=f''' update {sqlSchemaName}.dim_contact set website = '{contact_df['website'][0]}' where id =  {contact_df['contact_id'][0]}'''
+            print(sql_query_website)
+            new_dbobj.execute_query(sql_query_website)
+
+    if 'key_contact_name' in contact_df.columns and 'contact_id' in contact_df.columns :
+        if contact_df['key_contact_name'][0] and contact_df['contact_id'][0]:
+            sql_query_key_contact_name =f''' update {sqlSchemaName}.dim_contact set website = '{contact_df['key_contact_name'][0]}' where id =  {contact_df['contact_id'][0]}'''
+            print(sql_query_key_contact_name)
+            new_dbobj.execute_query(sql_query_key_contact_name)
+    
+    if 'person_role' in contact_df.columns and 'contact_id' in contact_df.columns :
+        if contact_df['person_role'][0] and contact_df['contact_id'][0]:
+            sql_query_person_role =f''' update {sqlSchemaName}.dim_contact set person_role = '{contact_df['person_role'][0]}' where id =  {contact_df['contact_id'][0]}'''
+            print(sql_query_person_role)
+            new_dbobj.execute_query(sql_query_person_role)
+        
+
+
+    
+def update_suppliers_contact_fun(new_dbobj,input_payload):
+        set_env_var()
+        input_payload_list=[]
+        input_payload_list.append(input_payload)
+
+        contact_columns=[]
+    
+        contact_input_df=pd.DataFrame.from_dict(input_payload_list)
+        contact_input_df_copy=contact_input_df.copy()
+
+        for column in contact_input_df.columns:
+            if column in ['contact_id', 'phone', 'email', 'website','key_contact_name','person_role']:
+                contact_columns.append(column)
+            
+        contact_df=contact_input_df[contact_columns]
+
+        update_contact_info_fun(new_dbobj,contact_df)
+        print(contact_df)
+
+        get_address_id_from_address_sipplier_mapping_query=f" select address_id from {sqlSchemaName}.address_supplier_mapping where id = {contact_input_df['address_supplier_mapping_id'][0]}"
+        print(get_address_id_from_address_sipplier_mapping_query)
+        address_id_df = new_dbobj.read_table(get_address_id_from_address_sipplier_mapping_query)
+        print(address_id_df)
+
+        # city_df = contact_input_df[['city']]
+        # city_id = get_normalized_id(new_dbobj,'dim_city',sqlSchemaName,city_df)
+
+        # state_df = contact_input_df[['state']]
+        # state_id = get_normalized_id(new_dbobj,'dim_state',sqlSchemaName,state_df)
+
+        # country_df = contact_input_df[['country','country_code']].rename(columns = {'country_code':'iso2'})
+        # country_id = get_normalized_id(new_dbobj,'dim_country',sqlSchemaName,country_df)
+
+
+
+        # for df_len_itr in range(len(contact_input_df_copy)):
+        #     contact_input_df=contact_input_df_copy[df_len_itr:df_len_itr+1]
+
+        #     for column in contact_input_df:
+        #         if column not in ['Pin_Code','Phone']:
+        #             contact_input_df[column]=contact_input_df[column].str.lower()
+            
+        #     contact_input_df['ap_preffered_supplier']=contact_input_df.ap_preffered_supplier.map(dict(yes=1, no=0))
+            
+        #     supplier_df=contact_input_df[['supplier_name',  'ap_supplier_id','supplier_type','ap_preffered_supplier']].rename(columns = {'supplier_name':'name','ap_preffered_supplier':'ap_preferred'})
+        #     contact_input_df['supplier_id'] = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df)
+            
+        #     city_df = contact_input_df[['City']]
+        #     city_id = get_normalized_id(new_dbobj,'dim_city',sqlSchemaName,city_df)
+
+        #     state_df = contact_input_df[['State']]
+        #     state_id = get_normalized_id(new_dbobj,'dim_state',sqlSchemaName,state_df)
+
+        #     country_df = contact_input_df[['Country','country_code']].rename(columns = {'country_code':'iso2'})
+        #     country_id = get_normalized_id(new_dbobj,'dim_country',sqlSchemaName,country_df)
+
+        #     contact_input_df['city_id'] = city_id
+        #     contact_input_df['state_id'] = state_id
+        #     contact_input_df['country_id'] = country_id
+        #     contact_input_df.rename(columns = {'Pin_Code':'pincode'}, inplace = True)
+        #     database_insert_df=contact_input_df[['address', 'pincode', 'city_id', 'state_id', 'country_id']]
+        #     address_id=get_normalized_id(new_dbobj,'dim_address',sqlSchemaName,database_insert_df)
+        #     address_supplier_mapping=contact_input_df[['supplier_id']]
+        #     address_supplier_mapping['address_id']=address_id
+        #     address_supplier_mapping_id = get_normalized_id(new_dbobj,'address_supplier_mapping',sqlSchemaName,address_supplier_mapping)
+            
+        #     contact_df = contact_input_df[['Name', 'Role','Email', 'Phone', 'website','supplier_id']]
+        #     contact_df.rename(columns = {'Name':'key_contact_name','Email':'email','Phone':'phone','Role':'person_role'}, inplace = True)
+        #     contact_df['address_supplier_mapping_id']=address_supplier_mapping_id
+
+        #     contact_id = get_normalized_id(new_dbobj,'dim_contact',sqlSchemaName,contact_df)
+            
+        #     supplier_info_df=contact_input_df[['source','key_customers','detailed_table','supplier_capability','supplier_catalogue','supplier_additional_info','key_categories','supplier_id']]
+        #     supplier_info_id = get_normalized_id(new_dbobj,'dim_supplier_info',sqlSchemaName,supplier_info_df)
+            
+        return 'API Execution Successful'
