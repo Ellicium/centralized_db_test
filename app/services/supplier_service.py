@@ -963,7 +963,6 @@ def update_suppliers_contact_fun(new_dbobj,input_payload):
         return 'API Execution Successful'
 
 
-
 def insert_suppliers_contact_fun(new_dbobj,input_payload):
         set_env_var()
         input_payload_list=[]

@@ -19,6 +19,7 @@ dbobj=database()
 @router.post("/suppliers/get-supplier-count", response_model=SupplierCountResponse)
 async def get_supplier_count(apipostschema:SupplierCountPost):
     try:
+        dbobj=database()
         logger.info(f"freetext:{apipostschema.text}, level_1:{apipostschema.level_1}, level_2:{apipostschema.level_2}, level_3:{apipostschema.level_3}")
         data = countrywise_supplier_count(apipostschema.text, apipostschema.level_1, apipostschema.level_2, apipostschema.level_3, dbobj)
         returnData = data.to_json(orient='records')
@@ -29,6 +30,7 @@ async def get_supplier_count(apipostschema:SupplierCountPost):
 @router.get("/suppliers/get-filters",response_model=FilterResponse)
 async def get_filters_api():
     try:
+        dbobj=database()
         logger.info("get-filters api started")
         level1filter, level2filter, level3filter = get_filters(dbobj)
         apiResponse = {
@@ -44,6 +46,7 @@ async def get_filters_api():
 @router.post("/suppliers/get-suppliers-information")
 async def search_suppliers_get_suppliers_information_api_fun(apipostschema:SupplierInfoCountry):
     try:
+        dbobj=database()
         return search_suppliers_get_suppliers_information(dbobj,apipostschema.text,apipostschema.region,apipostschema.page_number,apipostschema.page_size,apipostschema.preffered_flag)
     except Exception as e:
         logger.error(e)
@@ -54,6 +57,7 @@ async def search_suppliers_get_suppliers_information_api_fun(apipostschema:Suppl
 @router.post("/suppliers/get-supplier-details")
 async def search_suppliers_get_supplier_details_api_fun(apipostschema:SupplierDetails):
     try:
+        dbobj=database()
         return supplier_details_api(dbobj,apipostschema.supplier_id,apipostschema.supplier_name)
     except Exception as e:
         logger.error(e)
@@ -64,6 +68,7 @@ async def search_suppliers_get_supplier_details_api_fun(apipostschema:SupplierDe
 @router.get("/suppliers/get_unique_country")
 async def search_suppliers_get_unique_country():
     try:
+        dbobj=database()
         return get_unique_country(dbobj)
     except Exception as e:
         logger.error(e)
@@ -73,6 +78,7 @@ async def search_suppliers_get_unique_country():
 @router.post("/suppliers/set-supplier-details")
 async def insert_suppliers_info(apipostschema:UpdateSupplierDetails):
     try:
+        dbobj=database()
         print(apipostschema.input_payload,type(apipostschema.input_payload))
         return insert_suppliers_data_fun(dbobj,apipostschema.input_payload)
     except Exception as e:
@@ -83,6 +89,7 @@ async def insert_suppliers_info(apipostschema:UpdateSupplierDetails):
 @router.post("/suppliers/get-all-suppliers-details")
 async def all_Suppliers_details(apipostschema:allSupplierDetails):
     try:
+        dbobj=database()
         return get_all_suppliers_data_fun(dbobj,apipostschema.supplier_id_list)
     except Exception as e:
         logger.error(e)
@@ -94,6 +101,7 @@ async def all_Suppliers_details(apipostschema:allSupplierDetails):
 async def update_suppliers_contact(apipostschema:UpdateContactDetails):
     try:
         print(apipostschema.input_payload,type(apipostschema.input_payload))
+        dbobj=database()
         return update_suppliers_contact_fun(dbobj,apipostschema.input_payload)
     except Exception as e:
         logger.error(e)
@@ -105,6 +113,7 @@ async def update_suppliers_contact(apipostschema:UpdateContactDetails):
 async def insert_suppliers_contact(apipostschema:InsertContactDetails):
     try:
         print(apipostschema.input_payload,type(apipostschema.input_payload))
+        dbobj=database()
         return insert_suppliers_contact_fun(dbobj,apipostschema.input_payload)
     except Exception as e:
         logger.error(e)
