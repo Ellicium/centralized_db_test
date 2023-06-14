@@ -4,8 +4,8 @@ from fastapi import FastAPI, Request, Form, Response, APIRouter
 from fastapi.logger import logger
 from dotenv import load_dotenv
 from ..config.db_config import database
-from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails,UpdateContactDetails
-from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun
+from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails,UpdateContactDetails,InsertContactDetails
+from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun
 
 gunicorn_logger = logging.getLogger('gunicorn.error')
 logger.handlers = gunicorn_logger.handlers
@@ -95,6 +95,17 @@ async def update_suppliers_contact(apipostschema:UpdateContactDetails):
     try:
         print(apipostschema.input_payload,type(apipostschema.input_payload))
         return update_suppliers_contact_fun(dbobj,apipostschema.input_payload)
+    except Exception as e:
+        logger.error(e)
+        print(e)
+        return None
+
+
+@router.post("/suppliers/insert-supplier-contact")
+async def insert_suppliers_contact(apipostschema:InsertContactDetails):
+    try:
+        print(apipostschema.input_payload,type(apipostschema.input_payload))
+        return insert_suppliers_contact_fun(dbobj,apipostschema.input_payload)
     except Exception as e:
         logger.error(e)
         print(e)

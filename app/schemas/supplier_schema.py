@@ -63,6 +63,9 @@ class UpdateSupplierDetails(BaseModel):
 class UpdateContactDetails(BaseModel):
     input_payload :Optional[dict] = None
 
+class InsertContactDetails(BaseModel):
+    input_payload :Optional[dict] = None
+
 
 class allSupplierDetails(BaseModel):
     supplier_id_list :Optional[list[int]] = None
