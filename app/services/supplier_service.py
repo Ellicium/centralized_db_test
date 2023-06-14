@@ -417,7 +417,7 @@ inner join
 	where dc2.email is not null
 	and dsi.delete_flag is null
     and dc2.email not like 'none'
-    and dc2.key_contact_name not like 'none'
+    
 )q2
 on
 	ds.id = q2.id
@@ -485,7 +485,6 @@ from {sqlSchemaName}.dim_supplier ds
 	where dc2.email is not null
 	and dsi.delete_flag is null
     and dc2.email not like 'none'
-    and dc2.key_contact_name not like 'none'
 )q2
 on ds.id=q2.id
 where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Supplier_Capability) and ds.Country_Region in ( '{str("','".join(list(region))) }' )'''
@@ -585,7 +584,6 @@ from {sqlSchemaName}.dim_supplier ds
 	where dc2.email is not null
 	and dsi.delete_flag is null
     and dc2.email not like 'none'
-    and dc2.key_contact_name not like 'none'
 )q2
 on ds.id=q2.id
     '''
