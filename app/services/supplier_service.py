@@ -622,9 +622,9 @@ def get_datetime_attr(pandas_dff):
     start = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     pandas_dff=pandas_dff.drop_duplicates()
     pandas_dff['created_date']=start
-    pandas_dff['created_by']='krushna kadam'
+    pandas_dff['created_by']=None
     pandas_dff['updated_date']=start
-    pandas_dff['updated_by']='krushna kadam'
+    pandas_dff['updated_by']=None
     return pandas_dff
 
 def get_filter_sql_query(schema_name,table_name,data_dataframe):
@@ -670,15 +670,20 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
         contact_input_df_copy=contact_input_df.copy()
 
         for df_len_itr in range(len(contact_input_df_copy)):
-            contact_input_df=contact_input_df_copy[df_len_itr:df_len_itr+1]
+            contact_input_df=contact_input_df_copy[df_len_itr:df_len_itr+1].reset_index().drop(['index'], axis=1)
+            print(contact_input_df)
 
             for column in contact_input_df:
-                if column not in ['Pin_Code','Phone']:
+                if column not in ['Pin_Code','Phone','ap_preffered_supplier']:
                     contact_input_df[column]=contact_input_df[column].str.lower()
             
             contact_input_df['ap_preffered_supplier']=contact_input_df.ap_preffered_supplier.map(dict(yes=1, no=0))
+
+            for column in contact_input_df.columns:
+                if not  contact_input_df[column][0]:
+                    contact_input_df=contact_input_df.drop([column], axis=1)
             
-            supplier_df=contact_input_df[['supplier_name',  'ap_supplier_id','supplier_type','ap_preffered_supplier']].rename(columns = {'supplier_name':'name','ap_preffered_supplier':'ap_preferred'})
+            supplier_df=contact_input_df[['supplier_name']].rename(columns = {'supplier_name':'name'})
             contact_input_df['supplier_id'] = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df)
             
             city_df = contact_input_df[['City']]
@@ -687,26 +692,26 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
             state_df = contact_input_df[['State']]
             state_id = get_normalized_id(new_dbobj,'dim_state',sqlSchemaName,state_df)
 
-            country_df = contact_input_df[['Country','country_code']].rename(columns = {'country_code':'iso2'})
+            country_df = contact_input_df[['Country']].rename(columns = {'country_code':'iso2'})
             country_id = get_normalized_id(new_dbobj,'dim_country',sqlSchemaName,country_df)
 
             contact_input_df['city_id'] = city_id
             contact_input_df['state_id'] = state_id
             contact_input_df['country_id'] = country_id
-            contact_input_df.rename(columns = {'Pin_Code':'pincode'}, inplace = True)
-            database_insert_df=contact_input_df[['address', 'pincode', 'city_id', 'state_id', 'country_id']]
+            # contact_input_df.rename(columns = {'Pin_Code':'pincode'}, inplace = True)
+            database_insert_df=contact_input_df[['address',  'city_id', 'state_id', 'country_id']]
             address_id=get_normalized_id(new_dbobj,'dim_address',sqlSchemaName,database_insert_df)
             address_supplier_mapping=contact_input_df[['supplier_id']]
             address_supplier_mapping['address_id']=address_id
             address_supplier_mapping_id = get_normalized_id(new_dbobj,'address_supplier_mapping',sqlSchemaName,address_supplier_mapping)
             
-            contact_df = contact_input_df[['Name', 'Role','Email', 'Phone', 'website','supplier_id']]
-            contact_df.rename(columns = {'Name':'key_contact_name','Email':'email','Phone':'phone','Role':'person_role'}, inplace = True)
+            contact_df = contact_input_df[['Email', 'Phone', 'website','supplier_id']]
+            contact_df.rename(columns = {'Email':'email','Phone':'phone'}, inplace = True)
             contact_df['address_supplier_mapping_id']=address_supplier_mapping_id
 
             contact_id = get_normalized_id(new_dbobj,'dim_contact',sqlSchemaName,contact_df)
             
-            supplier_info_df=contact_input_df[['source','key_customers','detailed_table','supplier_capability','supplier_catalogue','supplier_additional_info','key_categories','supplier_id']]
+            supplier_info_df=contact_input_df[['supplier_capability','supplier_additional_info','supplier_id']]
             supplier_info_id = get_normalized_id(new_dbobj,'dim_supplier_info',sqlSchemaName,supplier_info_df)
             
         return 'API Execution Successful'
