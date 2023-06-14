@@ -86,7 +86,8 @@ def get_supplier_contact_func(object,dbobj):
         lev1=f'''select asm.id as 'address_supplier_mapping_id' ,da.address , 
 (SELECT city from {sqlSchemaName}.dim_city where id=da.city_id) as 'city',
 (SELECT state from {sqlSchemaName}.dim_state ds  where id=da.state_id) as 'state',
-(SELECT country from {sqlSchemaName}.dim_country where id=da.country_id) as 'country'
+(SELECT country from {sqlSchemaName}.dim_country where id=da.country_id) as 'country',
+(SELECT iso2 from {sqlSchemaName}.dim_country where id=da.country_id) as 'iso2'
 from {sqlSchemaName}.address_supplier_mapping asm 
 inner join {sqlSchemaName}.dim_address da on asm.address_id = da.id 
 where asm.supplier_id = {object.Shipper_Id}'''
