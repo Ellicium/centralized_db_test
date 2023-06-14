@@ -228,7 +228,7 @@ def supplier_details_api(new_dbobj,supplier_id,supplier_name):
         # if supplier_id=='0':
         #     supplier_id=None
         sql_query_for_data_for_supplier_id=f'''select
-        q3.supplier_name as Supplier_Name,q1.level1 as Level_1,q1.level2 as Level_2,q1.level3 as Level_3,q2.supplier_additional_info as Supplier_Additional_Info,q2.supplier_capability as Supplier_Capability,q3.country as Country_Region,q3.address as Address,q3.email as Email,q3.website as Website,q3.phone as Phone
+        q3.supplier_name as Supplier_Name,q3.ap_supplier_id,q1.level1 as Level_1,q1.level2 as Level_2,q1.level3 as Level_3,q2.supplier_additional_info as Supplier_Additional_Info,q2.supplier_capability as Supplier_Capability,q3.country as Country_Region,q3.address as Address,q3.email as Email,q3.website as Website,q3.phone as Phone
         from
         (
         select
@@ -279,7 +279,7 @@ def supplier_details_api(new_dbobj,supplier_id,supplier_name):
         select
             DISTINCT
         ds.id,
-            ds.name as Supplier_Name ,    dc2.country ,    dc.address ,    dc3.email ,    dc3.website,    dc3.phone
+            ds.name as Supplier_Name ,  ds.ap_supplier_id ,  dc2.country ,    dc.address ,    dc3.email ,    dc3.website,    dc3.phone
         from
             {schema_name}.dim_supplier ds
         left join {schema_name}.dim_supplier_info dsi
@@ -300,6 +300,7 @@ def supplier_details_api(new_dbobj,supplier_id,supplier_name):
             and dc3.address_supplier_mapping_id = asm.address_id
         where
             ds.id = {supplier_id}
+            and dsi.delete_flag is null
         ) q3
         on
         q2.id = q3.id
