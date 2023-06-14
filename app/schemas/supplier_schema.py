@@ -60,6 +60,10 @@ class UpdateSupplierDetails(BaseModel):
     input_payload :Optional[list[dict]] = None
 
 
+class UpdateContactDetails(BaseModel):
+    input_payload :Optional[dict] = None
+
+
 class allSupplierDetails(BaseModel):
     supplier_id_list :Optional[list[int]] = None
 
