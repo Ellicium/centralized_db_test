@@ -416,7 +416,6 @@ inner join
 		dc2.supplier_id = ds.id 
 	where dc2.email is not null
 	and dsi.delete_flag is null
-    and ds.ap_preferred =1
 )q2
 on
 	ds.id = q2.id
@@ -483,7 +482,6 @@ from {sqlSchemaName}.dim_supplier ds
 		dc2.supplier_id = ds.id 
 	where dc2.email is not null
 	and dsi.delete_flag is null
-    and ds.ap_preferred =1
 
 )q2
 on ds.id=q2.id
@@ -526,7 +524,7 @@ where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Su
 
         print(supplier_info_query)
 
-        suppliers_df=new_dbobj.read_table(supplier_info_query).drop_duplicates().drop(['id'], axis=1)
+        suppliers_df=new_dbobj.read_table(supplier_info_query).drop_duplicates()#.drop(['id'], axis=1)
 
         for column in suppliers_df:
             if column not in ['id','Supplier_ID']:
@@ -583,7 +581,6 @@ from {sqlSchemaName}.dim_supplier ds
 		dc2.supplier_id = ds.id 
 	where dc2.email is not null
 	and dsi.delete_flag is null
-    and ds.ap_preferred =1
 )q2
 on ds.id=q2.id
     '''

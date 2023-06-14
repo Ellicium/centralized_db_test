@@ -90,7 +90,6 @@ async def all_Suppliers_details(apipostschema:allSupplierDetails):
         return None
 
 
-
 @router.post("/suppliers/update-supplier-contact")
 async def update_suppliers_contact(apipostschema:UpdateContactDetails):
     try:
