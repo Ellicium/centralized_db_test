@@ -225,8 +225,7 @@ def supplier_details_api(new_dbobj,supplier_id,supplier_name):
         set_env_var()
         schema_name=sqlSchemaName
         supplier_id=str(int(supplier_id))
-        # if supplier_id=='0':
-        #     supplier_id=None
+
         sql_query_for_data_for_supplier_id=f'''select
         q3.supplier_name as Supplier_Name,q3.ap_supplier_id,q1.level1 as Level_1,q1.level2 as Level_2,q1.level3 as Level_3,q2.supplier_additional_info as Supplier_Additional_Info,q2.supplier_capability as Supplier_Capability,q3.country as Country_Region,q3.address as Address,q3.email as Email,q3.website as Website,q3.phone as Phone
         from
@@ -725,7 +724,7 @@ def get_all_suppliers_data_fun(new_dbobj,supplier_id_list):
         supplier_id=f''' ('{str("','".join(list(supplier_id_list))) }') '''
         
         sql_query_for_data_for_supplier_id=f'''select
-        q3.supplier_name as Supplier_Name,q2.ap_supplier_id,q1.level1 as Level_1,q1.level2 as Level_2,q1.level3 as Level_3,q2.supplier_additional_info as Supplier_Additional_Info,q2.supplier_capability as Supplier_Capability,q3.country as Country_Region,q3.address as Address,q3.email as Email,q3.website as Website,q3.phone as Phone,q3.key_contact_name 
+        q3.id,q3.supplier_name as Supplier_Name,q2.ap_supplier_id,q1.level1 as Level_1,q1.level2 as Level_2,q1.level3 as Level_3,q2.supplier_additional_info as Supplier_Additional_Info,q2.supplier_capability as Supplier_Capability,q3.country as Country_Region,q3.address as Address,q3.email as Email,q3.website as Website,q3.phone as Phone,q3.key_contact_name 
         from
         (
         select
