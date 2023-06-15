@@ -337,9 +337,11 @@ def search_suppliers_get_suppliers_information(new_dbobj,supplier,region,page_nu
         return_dict={}
 
         preferred_query= ''
+        qmail_query= ''
         if preffered_flag==1:
 
-            preferred_query='where ds.ap_preferred =1'
+            preferred_query=" where ds.ap_preferred =1 "
+            qmail_query=" and  dc2.email is not null and dc2.email not like 'none' "
 
         supplier_info_query=f'''SELECT
 	ds.id,
@@ -414,9 +416,9 @@ inner join
 	left join {sqlSchemaName}.dim_contact dc2 
 	on 
 		dc2.supplier_id = ds.id 
-	where dc2.email is not null
-	and dsi.delete_flag is null
-    and dc2.email not like 'none'
+	where
+	dsi.delete_flag is null
+    {qmail_query}
     
 )q2
 on
@@ -482,9 +484,9 @@ from {sqlSchemaName}.dim_supplier ds
     	left join {sqlSchemaName}.dim_contact dc2 
 	on 
 		dc2.supplier_id = ds.id 
-	where dc2.email is not null
-	and dsi.delete_flag is null
-    and dc2.email not like 'none'
+	where 
+	 dsi.delete_flag is null
+     {qmail_query}
 )q2
 on ds.id=q2.id
 where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Supplier_Capability) and ds.Country_Region in ( '{str("','".join(list(region))) }' )'''
@@ -581,9 +583,10 @@ from {sqlSchemaName}.dim_supplier ds
     	left join {sqlSchemaName}.dim_contact dc2 
 	on 
 		dc2.supplier_id = ds.id 
-	where dc2.email is not null
-	and dsi.delete_flag is null
-    and dc2.email not like 'none'
+	where
+	dsi.delete_flag is null
+    {qmail_query}
+    
 )q2
 on ds.id=q2.id
     '''
