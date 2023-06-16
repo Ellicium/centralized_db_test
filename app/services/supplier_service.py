@@ -489,7 +489,17 @@ from {sqlSchemaName}.dim_supplier ds
      {qmail_query}
 )q2
 on ds.id=q2.id
-where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Supplier_Capability) and ds.Country_Region in ( '{str("','".join(list(region))) }' )'''
+where   q2.Level_1 like '%{str(supplier)}%'
+or 
+q2.Level_2 like '%{str(supplier)}%'
+or 
+q2.Level_3 like '%{str(supplier)}%'
+or
+q2.Supplier_Capability like '%{str(supplier)}%'
+OR 
+ds.Supplier_ID like '%{str(supplier)}%'
+OR 
+ds.Supplier_Name like '%{str(supplier)}%'  and ds.Country_Region in ( '{str("','".join(list(region))) }' )'''
 
             both_filter_flag=1
             
@@ -500,7 +510,17 @@ where '{str(supplier)}' in (Supplier_Name,Level_1,Level_2,Level_3,Supplier_ID,Su
                 if already_condition_exist==1:
                     supplier_info_query+=' and '            
 
-                supplier_info_query+=f''' '{str(supplier)}' in (q2.Level_1, q2.Level_2, q2.Level_3, q2.Supplier_Capability, ds.Supplier_ID, ds.Supplier_Name)'''
+                supplier_info_query+=f''' q2.Level_1 like '%{str(supplier)}%'
+or 
+q2.Level_2 like '%{str(supplier)}%'
+or 
+q2.Level_3 like '%{str(supplier)}%'
+or
+q2.Supplier_Capability like '%{str(supplier)}%'
+OR 
+ds.Supplier_ID like '%{str(supplier)}%'
+OR 
+ds.Supplier_Name like '%{str(supplier)}%' '''
                 already_condition_exist=1
 
             if region:
@@ -601,7 +621,17 @@ on ds.id=q2.id
                 if already_condition_exist==1:
                     filter_query+=' and '            
 
-                filter_query+=f''' '{str(supplier)}' in (q2.Level_1,q2.Level_2,q2.Level_3,q2.Supplier_Capability,ds.Supplier_ID,ds.Supplier_Name)'''
+                filter_query+=f'''  q2.Level_1 like '%{str(supplier)}%'
+or 
+q2.Level_2 like '%{str(supplier)}%'
+or 
+q2.Level_3 like '%{str(supplier)}%'
+or
+q2.Supplier_Capability like '%{str(supplier)}%'
+OR 
+ds.Supplier_ID like '%{str(supplier)}%'
+OR 
+ds.Supplier_Name like '%{str(supplier)}%' '''
                 already_condition_exist=1
 
             if region:
