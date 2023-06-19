@@ -4,8 +4,12 @@ from fastapi import FastAPI, Request, Form, Response, APIRouter
 from fastapi.logger import logger
 from dotenv import load_dotenv
 from ..config.db_config import database
-from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails,UpdateContactDetails,InsertContactDetails
+from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails,UpdateContactDetails,InsertContactDetails, SupplierInfoV2
 from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun
+
+# v2
+from ..services.supplier_services.supplierinfov2 import get_supplier_information_service
+
 
 gunicorn_logger = logging.getLogger('gunicorn.error')
 logger.handlers = gunicorn_logger.handlers
@@ -119,3 +123,16 @@ async def all_Suppliers_details(apipostschema:allSupplierDetails):
 #         logger.error(e)
 #         print(e)
 #         return None
+
+
+
+@router.post("/v2/suppliers/get-supplier-information")
+async def get_supplier_infov2(apipostschema:SupplierInfoV2):
+    try:
+        logger.info(f"freetext:{apipostschema.text},region:{apipostschema.region},page_number:{apipostschema.page_number},page_size:{apipostschema.page_size},preferred_flag:{apipostschema.preferred_flag}")
+        # service function call
+        response_data = get_supplier_information_service(freetext1=apipostschema.text, country=apipostschema.region, page_number=apipostschema.page_number, page_size=apipostschema.page_size)
+        return response_data
+    except Exception as e:
+        print(e)
+        logger.error("get_supplier_infov2 failed",exc_info=e)
