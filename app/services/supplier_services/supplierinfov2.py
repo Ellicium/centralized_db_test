@@ -45,7 +45,7 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
         payload_dict["searchFields"] = "Supplier_ID,Supplier_Name,Supplier_Capability,Level_1,Level_2,Level_3"
         payload_dict["count"] = "true"
         payload_dict["top"] = page_size
-        payload_dict["skip"] = page_number - 1
+        payload_dict["skip"] = (page_number - 1) * page_size
         payload_dict["searchMode"] = "all"
         # call azuresearch api with payload
         data = hit_azuresearch_api(payload_dict)
