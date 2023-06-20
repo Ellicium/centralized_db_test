@@ -85,7 +85,7 @@ class FilterResponse(BaseModel):
     
 class SupplierInfoV2(BaseModel):
     text : Optional[str] = "*"
-    region: Optional[List[str]] = None
+    region: Optional[List] = []
     page_number: Optional[int] = 1
     page_size: Optional[int] = 20
     preferred_flag: Optional[int] = None
