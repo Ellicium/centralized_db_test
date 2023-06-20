@@ -28,7 +28,7 @@ def hit_azuresearch_api(payload):
         logger.error("An unexpected error occurred", exc_info=e)
 
 @timer_func
-def get_supplier_information_service(freetext1:None , country:None, page_number:0, page_size:20):
+def get_supplier_information_service(freetext1:None , country:None, page_number:0, page_size:20,preferred_flag:0):
     try:
         payload_dict = {}
         return_dict = {}
@@ -37,7 +37,9 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
         # if len(country[0])>0:
         if len(country) > 0:
             country_filter = f"Country_Region eq '{country[0].lower()}'"
-            payload_dict['filter'] = country_filter
+            payload_dict["filter"] = country_filter
+        if (preferred_flag==1) and (len(country)==0):
+            payload_dict["filter"] = f"ap_preferred eq true and email ne null"
         # populating payload
         payload_dict["search"] = f"{freetext1}"
         payload_dict["searchFields"] = "Supplier_ID,Supplier_Name,Supplier_Capability,Level_1,Level_2,Level_3"

@@ -131,7 +131,7 @@ async def get_supplier_info_v2(apipostschema:SupplierInfoV2):
     try:
         logger.info(f"freetext:{apipostschema.text},region:{apipostschema.region},page_number:{apipostschema.page_number},page_size:{apipostschema.page_size},preferred_flag:{apipostschema.preferred_flag}")
         # service function call
-        response_data = get_supplier_information_service(freetext1=apipostschema.text, country=apipostschema.region, page_number=apipostschema.page_number, page_size=apipostschema.page_size)
+        response_data = get_supplier_information_service(freetext1=apipostschema.text, country=apipostschema.region, page_number=apipostschema.page_number, page_size=apipostschema.page_size,preferred_flag=apipostschema.preferred_flag)
         return response_data
     except Exception as e:
         print(e)
