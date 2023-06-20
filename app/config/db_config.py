@@ -5,8 +5,7 @@ import urllib.parse
 from dotenv import load_dotenv
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, text
-from ..services.supplier_service import timer_func
-
+from ..utils.timer import timer_func
 
 load_dotenv()
 
