@@ -88,4 +88,4 @@ class SupplierInfoV2(BaseModel):
     region: Optional[List] = []
     page_number: Optional[int] = 1
     page_size: Optional[int] = 20
-    preferred_flag: Optional[int] = None
+    preffered_flag: Optional[int] = None
