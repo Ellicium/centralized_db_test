@@ -5,6 +5,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from ...config.logger_config import get_logger
 from ...utils.timer import timer_func
+from ...services.supplier_service import clean_main
 load_dotenv()
 logger = get_logger()
 
@@ -32,6 +33,7 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
     try:
         payload_dict = {}
         return_dict = {}
+        freetext1=clean_main(freetext1)
         if freetext1 is None:
             freetext1 = "*"
         # if len(country[0])>0:
@@ -44,6 +46,7 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
         payload_dict["search"] = f"{freetext1}"
         payload_dict["searchFields"] = "Supplier_ID,Supplier_Name,Supplier_Capability,Level_1,Level_2,Level_3"
         payload_dict["count"] = "true"
+        payload_dict["select"] = "id,Supplier_ID, Supplier_Name, Country_Region, Supplier_Capability, Level_1, Level_2, Level_3, email,  ap_preferred, supplier_additional_info, website, phone, key_contact_name"
         payload_dict["top"] = page_size
         payload_dict["skip"] = (page_number - 1) * page_size
         payload_dict["searchMode"] = "all"
