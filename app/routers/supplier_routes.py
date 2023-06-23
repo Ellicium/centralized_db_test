@@ -79,16 +79,16 @@ async def search_suppliers_get_unique_country():
         print(e)
         return None
     
-# @router.post("/suppliers/set-supplier-details")
-# async def insert_suppliers_info(apipostschema:UpdateSupplierDetails):
-#     try:
-#         dbobj=database()
-#         print(apipostschema.input_payload,type(apipostschema.input_payload))
-#         return insert_suppliers_data_fun(dbobj,apipostschema.input_payload)
-#     except Exception as e:
-#         logger.error(e)
-#         print(e)
-#         return None
+@router.post("/suppliers/set-supplier-details")
+async def insert_suppliers_info(apipostschema:UpdateSupplierDetails):
+    try:
+        dbobj=database()
+        print(apipostschema.input_payload,type(apipostschema.input_payload))
+        return insert_suppliers_data_fun(dbobj,apipostschema.input_payload)
+    except Exception as e:
+        logger.error(e)
+        print(e)
+        return None
     
 @router.post("/suppliers/get-all-suppliers-details")
 async def all_Suppliers_details(apipostschema:allSupplierDetails):

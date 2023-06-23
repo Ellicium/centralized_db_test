@@ -690,6 +690,8 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
         contact_input_df=pd.DataFrame.from_dict(input_payload_list)
         contact_input_df_copy=contact_input_df.copy()
 
+        supplier_id_list=[]
+
         for df_len_itr in range(len(contact_input_df_copy)):
             contact_input_df=contact_input_df_copy[df_len_itr:df_len_itr+1].reset_index().drop(['index'], axis=1)
             print(contact_input_df)
@@ -704,9 +706,12 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
                 if not  contact_input_df[column][0]:
                     contact_input_df=contact_input_df.drop([column], axis=1)
             
-            supplier_df=contact_input_df[['supplier_name']].rename(columns = {'supplier_name':'name'})
-            contact_input_df['supplier_id'] = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df)
+            supplier_df=contact_input_df[['supplier_name']].rename(columns = {'supplier_name':'name'})#add supplier extra cols
+            supplier_id_received = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df)
+            contact_input_df['supplier_id']=supplier_id_received
+            supplier_id_list.append(int(supplier_id_received))
             
+
             city_df = contact_input_df[['City']]
             city_id = get_normalized_id(new_dbobj,'dim_city',sqlSchemaName,city_df)
 
@@ -731,11 +736,52 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
             contact_df['address_supplier_mapping_id']=address_supplier_mapping_id
 
             contact_id = get_normalized_id(new_dbobj,'dim_contact',sqlSchemaName,contact_df)
-            
-            supplier_info_df=contact_input_df[['supplier_capability','supplier_additional_info','supplier_id']]
+            contact_input_df['address_supplier_mapping_id']=address_supplier_mapping_id
+
+            supplier_info_df_columns=[]
+            supplier_info_df_all_columns=['supplier_capability','supplier_additional_info','supplier_id','address_supplier_mapping_id']
+            for column in supplier_info_df_all_columns:
+                if column in contact_input_df.columns:
+                    supplier_info_df_columns.append(column)
+
+            supplier_info_df=contact_input_df[supplier_info_df_columns]
             supplier_info_id = get_normalized_id(new_dbobj,'dim_supplier_info',sqlSchemaName,supplier_info_df)
             
-        return 'API Execution Successful'
+
+            if 'level_1' in contact_input_df.columns:
+                level_1_df=contact_input_df[['level_1']].rename(columns = {'level_1':'name'})
+                level_1_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_1_df)
+            
+            if 'level_2' in contact_input_df.columns:
+                level_2_df=contact_input_df[['level_2']].rename(columns = {'level_2':'name'})
+                level_2_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_2_df)
+
+            if 'level_3' in contact_input_df.columns:
+                level_3_df=contact_input_df[['level_3']].rename(columns = {'level_3':'name'})
+                level_3_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_3_df)
+
+            if 'level_1' in contact_input_df.columns:
+                contact_input_df['level_1_category_id']=level_1_id
+            if 'level_2' in contact_input_df.columns:
+                contact_input_df['level_2_category_id']=level_2_id
+            if 'level_3' in contact_input_df.columns:
+                contact_input_df['level_3_category_id']=level_3_id
+
+            category_level_df_all_columns=['level_3_category_id','level_2_category_id','level_1_category_id']
+
+            category_level_df_columns=[]
+            for each_col in category_level_df_all_columns:
+                if each_col in contact_input_df.columns:
+                    category_level_df_columns.append(each_col)
+
+            category_level_df=contact_input_df[category_level_df_columns]
+            category_level_id=get_normalized_id(new_dbobj,'dim_category_level',sqlSchemaName,category_level_df)
+            contact_input_df['category_level_id']=category_level_id
+
+            category_supplier_mapping_df=contact_input_df[['supplier_id','address_supplier_mapping_id','category_level_id']]
+            category_supplier_mapping_id=get_normalized_id(new_dbobj,'category_supplier_mapping',sqlSchemaName,category_supplier_mapping_df)
+            
+        return supplier_id_list
     
 
 def get_all_suppliers_data_fun(new_dbobj,supplier_id_list):
