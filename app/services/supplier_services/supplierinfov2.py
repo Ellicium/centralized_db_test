@@ -33,9 +33,10 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
     try:
         payload_dict = {}
         return_dict = {}
-        freetext1=clean_main(freetext1)
-        if freetext1 is None:
+        if (freetext1 == ""):
             freetext1 = "*"
+        else:
+            freetext1=clean_main(freetext1)
         # if len(country[0])>0:
         if len(country) > 0:
             country_filter = f"Country_Region eq '{country[0].lower()}'"
