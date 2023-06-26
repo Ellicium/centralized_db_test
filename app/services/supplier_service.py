@@ -4,18 +4,15 @@ import logging,re
 import pandas as pd
 from time import time
 from dotenv import load_dotenv
-from fastapi.logger import logger
 import spacy
-# from textblob import TextBlob
-nlp = spacy.load('en_core_web_sm')
-import logging
+
 from fastapi.logger import logger
+from ..config.logger_config import get_uvicorn_logger,get_gunicorn_logger
 
-gunicorn_logger = logging.getLogger('gunicorn.error')
-logger.handlers = gunicorn_logger.handlers
-logger.setLevel(gunicorn_logger.level)
 
+logger = get_gunicorn_logger()
 load_dotenv()
+nlp = spacy.load('en_core_web_sm')
 
 
 def set_env_var():
@@ -1078,3 +1075,11 @@ def insert_suppliers_contact_fun(new_dbobj,input_payload):
             
         return 'API Execution Successful'
     
+def get_supplier_table_poc(dbobj):
+    try:
+        logger.info('get_supplier_table started')
+        set_env_var()
+        supplierNames = dbobj.read_table(f"Select TOP 10 * from {sqlSchemaName}.dim_supplier_adf_poc")
+        return supplierNames.to_json(orient='records')
+    except Exception as e:
+        logger.error('get_supplier_table failed', exc_info=e)

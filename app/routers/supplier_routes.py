@@ -4,16 +4,15 @@ from fastapi import FastAPI, Request, Form, Response, APIRouter
 from fastapi.logger import logger
 from dotenv import load_dotenv
 from ..config.db_config import database
+from ..config.logger_config import get_uvicorn_logger,get_gunicorn_logger
 from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails,UpdateContactDetails,InsertContactDetails, SupplierInfoV2
-from ..services.supplier_service import countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun
+from ..services.supplier_service import get_supplier_table_poc,countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun
 
 # v2
 from ..services.supplier_services.supplierinfov2 import get_supplier_information_service
 
 
-gunicorn_logger = logging.getLogger('gunicorn.error')
-logger.handlers = gunicorn_logger.handlers
-logger.setLevel(gunicorn_logger.level)
+logger = get_gunicorn_logger()
 load_dotenv()
 
 router = APIRouter()
@@ -133,6 +132,17 @@ async def get_supplier_info_v2(apipostschema:SupplierInfoV2):
         # service function call
         response_data = get_supplier_information_service(freetext1=apipostschema.text, country=apipostschema.region, page_number=apipostschema.page_number, page_size=apipostschema.page_size,preferred_flag=apipostschema.preffered_flag)
         return response_data
+    except Exception as e:
+        print(e)
+        logger.error("get_supplier_infov2 failed",exc_info=e)
+
+
+@router.get("/suppliers/get-suppliers-table-poc")
+async def get_supplier_table_router_poc():
+    try:
+        # service function call
+        response_data = get_supplier_table_poc(dbobj)
+        return Response(content=response_data, media_type="application/json",status_code=200)
     except Exception as e:
         print(e)
         logger.error("get_supplier_infov2 failed",exc_info=e)

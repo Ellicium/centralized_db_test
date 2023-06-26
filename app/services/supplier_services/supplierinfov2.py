@@ -3,12 +3,12 @@ import json
 import requests
 import pandas as pd
 from dotenv import load_dotenv
-from ...config.logger_config import get_logger
+from ...config.logger_config import get_uvicorn_logger,get_gunicorn_logger
 from ...utils.timer import timer_func
 from ...services.supplier_service import clean_main
-load_dotenv()
-logger = get_logger()
 
+load_dotenv()
+logger = get_gunicorn_logger()
 
 @timer_func
 def hit_azuresearch_api(payload):
