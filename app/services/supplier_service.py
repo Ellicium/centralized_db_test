@@ -636,13 +636,13 @@ ds.Supplier_Name like '%{str(supplier)}%' '''
         logger.error(e)
         return None
 
-def get_datetime_attr(pandas_dff):
+def get_datetime_attr(pandas_dff,username):
     start = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     pandas_dff=pandas_dff.drop_duplicates()
     pandas_dff['created_date']=start
-    pandas_dff['created_by']=None
+    pandas_dff['created_by']=username
     pandas_dff['updated_date']=start
-    pandas_dff['updated_by']=None
+    pandas_dff['updated_by']=username
     return pandas_dff
 
 def get_filter_sql_query(schema_name,table_name,data_dataframe):
@@ -675,10 +675,10 @@ def update_supplier_update_date(supplier_id,new_dbobj,schema_name):
     new_dbobj.execute_query(sql_query_update_date)
 
     
-def get_normalized_id(new_dbobj,table_name,schema_name,data_dataframe):
+def get_normalized_id(new_dbobj,table_name,schema_name,data_dataframe,username):
     mapping = {country.name.lower().strip(): country.alpha_2 for country in pycountry.countries}
     sql_query = get_filter_sql_query(schema_name,table_name,data_dataframe)
-    data_dataframe = get_datetime_attr(data_dataframe)
+    data_dataframe = get_datetime_attr(data_dataframe,username)
     sql_data = new_dbobj.read_table(sql_query)
     if len(sql_data)==0:
         soft_delete_function(new_dbobj,table_name,schema_name,data_dataframe)
@@ -699,6 +699,8 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
             contact_input_df=contact_input_df_copy[df_len_itr:df_len_itr+1].reset_index().drop(['index'], axis=1)
             print(contact_input_df)
 
+            username=contact_input_df['user'][0]
+
             for column in contact_input_df:
                 if column not in ['Pin_Code','Phone','ap_preffered_supplier']:
                     contact_input_df[column]=contact_input_df[column].str.lower()
@@ -710,28 +712,28 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
                     contact_input_df=contact_input_df.drop([column], axis=1)
             
             supplier_df=contact_input_df[['supplier_name']].rename(columns = {'supplier_name':'name'})#add supplier extra cols
-            supplier_id_received = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df)
+            supplier_id_received = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df,username)
             contact_input_df['supplier_id']=supplier_id_received
             supplier_id_list.append(int(supplier_id_received))
             
             city_df = contact_input_df[['City']]
-            city_id = get_normalized_id(new_dbobj,'dim_city',sqlSchemaName,city_df)
+            city_id = get_normalized_id(new_dbobj,'dim_city',sqlSchemaName,city_df,username)
 
             state_df = contact_input_df[['State']]
-            state_id = get_normalized_id(new_dbobj,'dim_state',sqlSchemaName,state_df)
+            state_id = get_normalized_id(new_dbobj,'dim_state',sqlSchemaName,state_df,username)
 
             country_df = contact_input_df[['Country']].rename(columns = {'country_code':'iso2'})
-            country_id = get_normalized_id(new_dbobj,'dim_country',sqlSchemaName,country_df)
+            country_id = get_normalized_id(new_dbobj,'dim_country',sqlSchemaName,country_df,username)
 
             contact_input_df['city_id'] = city_id
             contact_input_df['state_id'] = state_id
             contact_input_df['country_id'] = country_id
             # contact_input_df.rename(columns = {'Pin_Code':'pincode'}, inplace = True)
             database_insert_df=contact_input_df[['address',  'city_id', 'state_id', 'country_id']]
-            address_id=get_normalized_id(new_dbobj,'dim_address',sqlSchemaName,database_insert_df)
+            address_id=get_normalized_id(new_dbobj,'dim_address',sqlSchemaName,database_insert_df,username)
             address_supplier_mapping=contact_input_df[['supplier_id']]
             address_supplier_mapping['address_id']=address_id
-            address_supplier_mapping_id = get_normalized_id(new_dbobj,'address_supplier_mapping',sqlSchemaName,address_supplier_mapping)
+            address_supplier_mapping_id = get_normalized_id(new_dbobj,'address_supplier_mapping',sqlSchemaName,address_supplier_mapping,username)
 
             update_supplier_update_date(address_supplier_mapping['supplier_id'][0],new_dbobj,sqlSchemaName)
             
@@ -746,7 +748,7 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
             contact_df.rename(columns = {'Email':'email','Phone':'phone'}, inplace = True)
             contact_df['address_supplier_mapping_id']=address_supplier_mapping_id
 
-            contact_id = get_normalized_id(new_dbobj,'dim_contact',sqlSchemaName,contact_df)
+            contact_id = get_normalized_id(new_dbobj,'dim_contact',sqlSchemaName,contact_df,username)
             update_supplier_update_date(contact_df['supplier_id'][0],new_dbobj,sqlSchemaName)
 
             contact_input_df['address_supplier_mapping_id']=address_supplier_mapping_id
@@ -758,21 +760,21 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
                     supplier_info_df_columns.append(column)
 
             supplier_info_df=contact_input_df[supplier_info_df_columns]
-            supplier_info_id = get_normalized_id(new_dbobj,'dim_supplier_info',sqlSchemaName,supplier_info_df)
+            supplier_info_id = get_normalized_id(new_dbobj,'dim_supplier_info',sqlSchemaName,supplier_info_df,username)
             update_supplier_update_date(supplier_info_df['supplier_id'][0],new_dbobj,sqlSchemaName)
             
 
             if 'level_1' in contact_input_df.columns:
                 level_1_df=contact_input_df[['level_1']].rename(columns = {'level_1':'name'})
-                level_1_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_1_df)
+                level_1_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_1_df,username)
             
             if 'level_2' in contact_input_df.columns:
                 level_2_df=contact_input_df[['level_2']].rename(columns = {'level_2':'name'})
-                level_2_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_2_df)
+                level_2_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_2_df,username)
 
             if 'level_3' in contact_input_df.columns:
                 level_3_df=contact_input_df[['level_3']].rename(columns = {'level_3':'name'})
-                level_3_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_3_df)
+                level_3_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_3_df,username)
 
             if 'level_1' in contact_input_df.columns:
                 contact_input_df['level_1_category_id']=level_1_id
@@ -789,11 +791,11 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
                     category_level_df_columns.append(each_col)
 
             category_level_df=contact_input_df[category_level_df_columns]
-            category_level_id=get_normalized_id(new_dbobj,'dim_category_level',sqlSchemaName,category_level_df)
+            category_level_id=get_normalized_id(new_dbobj,'dim_category_level',sqlSchemaName,category_level_df,username)
             contact_input_df['category_level_id']=category_level_id
 
             category_supplier_mapping_df=contact_input_df[['supplier_id','address_supplier_mapping_id','category_level_id']]
-            category_supplier_mapping_id=get_normalized_id(new_dbobj,'category_supplier_mapping',sqlSchemaName,category_supplier_mapping_df)
+            category_supplier_mapping_id=get_normalized_id(new_dbobj,'category_supplier_mapping',sqlSchemaName,category_supplier_mapping_df,username)
             update_supplier_update_date(category_supplier_mapping_df['supplier_id'][0],new_dbobj,sqlSchemaName)
             
         return supplier_id_list
