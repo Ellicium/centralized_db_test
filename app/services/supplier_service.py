@@ -798,6 +798,11 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
             category_supplier_mapping_id=get_normalized_id(new_dbobj,'category_supplier_mapping',sqlSchemaName,category_supplier_mapping_df,username)
             update_supplier_update_date(category_supplier_mapping_df['supplier_id'][0],new_dbobj,sqlSchemaName)
             
+            update_sp_id_query=f'''UPDATE {sqlSchemaName}.dim_supplier 
+set ap_supplier_id  = 'AP'+RIGHT('0000000' + CAST(id AS VARCHAR(9)), 7)
+where ap_supplier_id   is null'''
+            new_dbobj.execute_query(update_sp_id_query)
+
         return supplier_id_list
     
 
