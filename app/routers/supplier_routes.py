@@ -83,7 +83,10 @@ async def insert_suppliers_info(apipostschema:UpdateSupplierDetails):
     try:
         dbobj=database()
         print(apipostschema.input_payload,type(apipostschema.input_payload))
-        return insert_suppliers_data_fun(dbobj,apipostschema.input_payload)
+        response=insert_suppliers_data_fun(dbobj,apipostschema.input_payload)
+        if response==0:
+            return 'API failed because of invalid data'
+        return response
     except Exception as e:
         logger.error(e)
         print(e)
