@@ -672,7 +672,7 @@ def soft_delete_function(new_dbobj,table_name,schema_name,data_dataframe):
 def update_supplier_update_date(supplier_id,new_dbobj,schema_name):
     start = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     sql_query_update_date=f''' update {schema_name}.dim_supplier set updated_date = '{str(start)}' where id= {supplier_id} '''
-    new_dbobj.execute_query(sql_query_update_date)
+    new_dbobj.execute_query(str(sql_query_update_date))
 
     
 def get_normalized_id(new_dbobj,table_name,schema_name,data_dataframe,username):
