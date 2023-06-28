@@ -706,7 +706,8 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
                 if column not in ['Pin_Code','Phone','ap_preffered_supplier']:
                     contact_input_df[column]=contact_input_df[column].str.lower()
             
-            contact_input_df['ap_preffered_supplier']=contact_input_df.ap_preffered_supplier.map(dict(yes=1, no=0))
+            if contact_input_df['ap_preffered_supplier'][0]:
+                contact_input_df['ap_preffered_supplier']=contact_input_df.ap_preffered_supplier.map(dict(yes=1, no=0))
 
             for column in contact_input_df.columns:
                 if not  contact_input_df[column][0]:
@@ -823,7 +824,8 @@ where ap_supplier_id   is null'''
             new_dbobj.execute_query(update_sp_id_query)
 
         return supplier_id_list
-    except:
+    except Exception as e:
+        print(e)
         return 0
 
 def get_all_suppliers_data_fun(new_dbobj,supplier_id_list):
