@@ -61,3 +61,38 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
         return return_dict
     except Exception as e:
         logger.error("get_supplier_information failed",exc_info=e)
+
+
+@timer_func
+def get_supplier_information_rfi_service(freetext1:None , country:None, page_number:0, page_size:20,preferred_flag:0):
+    try:
+        payload_dict = {}
+        return_dict = {}
+        if (freetext1 == ""):
+            freetext1 = "*"
+        else:
+            freetext1=clean_main(freetext1)
+        # if len(country[0])>0:
+        if len(country) > 0:
+            country_filter = f"Country_Region eq '{country[0].lower()}'"
+            payload_dict["filter"] = country_filter
+        if (preferred_flag==1) and (len(country)==0):
+            payload_dict["filter"] = f"key_contact_name ne null and email ne null"
+        # populating payload
+        payload_dict["search"] = f"{freetext1}"
+        payload_dict["searchFields"] = "Supplier_ID,Supplier_Name,Supplier_Capability,Level_1,Level_2,Level_3"
+        payload_dict["count"] = "true"
+        payload_dict["select"] = "id,Supplier_ID, Supplier_Name, Country_Region, Supplier_Capability, Level_1, Level_2, Level_3, email,  ap_preferred, supplier_additional_info, website, phone, key_contact_name"
+        payload_dict["top"] = page_size
+        payload_dict["skip"] = page_number
+        payload_dict["searchMode"] = "all"
+        # call azuresearch api with payload
+        data = hit_azuresearch_api(payload_dict)
+        response_dict = json.loads(data)
+        total_record = response_dict["@odata.count"]
+        dict_data = response_dict["value"]
+        return_dict["data"] = dict_data
+        return_dict["total_record"] = total_record
+        return return_dict
+    except Exception as e:
+        logger.error("get_supplier_information failed",exc_info=e)
