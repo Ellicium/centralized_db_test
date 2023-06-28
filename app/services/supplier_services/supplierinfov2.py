@@ -42,7 +42,7 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
             country_filter = f"Country_Region eq '{country[0].lower()}'"
             payload_dict["filter"] = country_filter
         if (preferred_flag==1) and (len(country)==0):
-            payload_dict["filter"] = f"ap_preferred eq true and email ne null"
+            payload_dict["filter"] = f"key_contact_name ne null and email ne null"
         # populating payload
         payload_dict["search"] = f"{freetext1}"
         payload_dict["searchFields"] = "Supplier_ID,Supplier_Name,Supplier_Capability,Level_1,Level_2,Level_3"
