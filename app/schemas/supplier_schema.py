@@ -96,3 +96,5 @@ class SupplierInforfi(BaseModel):
     page_number: Optional[int] = 1
     page_size: Optional[int] = 20
     preffered_flag: Optional[int] = None
+    supplier_list:Optional[List] = []
+    skip_supplier_list:Optional[List] = []

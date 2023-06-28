@@ -64,7 +64,7 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
 
 
 @timer_func
-def get_supplier_information_rfi_service(freetext1:None , country:None, page_number:0, page_size:20,preferred_flag:0):
+def get_supplier_information_rfi_service(freetext1:None , country:None, page_number:0, page_size:20,preferred_flag:0,supplier_list:None,skip_supplier_list:None):
     try:
         payload_dict = {}
         return_dict = {}
@@ -73,11 +73,34 @@ def get_supplier_information_rfi_service(freetext1:None , country:None, page_num
         else:
             freetext1=clean_main(freetext1)
         # if len(country[0])>0:
+        if (supplier_list):
+            index = 0
+            page_size=1000000
+            page_number=0
+            for x in supplier_list:
+                if index==0:
+                    payload_dict["filter"]=f"id eq {x}"
+                else:
+                    payload_dict["filter"]+=f" or id eq {x}"
+                index += 1
+        elif (skip_supplier_list):
+            index = 0
+            print('skipping')
+            for x in skip_supplier_list:
+                if index==0:
+                    payload_dict["filter"]=f"id ne {x}"
+                else:
+                    payload_dict["filter"]+=f" and id ne {x}"
+                index += 1
+        else:
+            payload_dict["filter"]=f"key_contact_name ne null"
+        
         if len(country) > 0:
-            country_filter = f"Country_Region eq '{country[0].lower()}'"
-            payload_dict["filter"] = country_filter
+            country_filter = f" and Country_Region eq '{country[0].lower()}'"
+            payload_dict["filter"] += country_filter
         if (preferred_flag==1) and (len(country)==0):
-            payload_dict["filter"] = f"key_contact_name ne null and email ne null"
+            payload_dict["filter"] += f" and key_contact_name ne null and email ne null"
+    
         # populating payload
         payload_dict["search"] = f"{freetext1}"
         payload_dict["searchFields"] = "Supplier_ID,Supplier_Name,Supplier_Capability,Level_1,Level_2,Level_3"
@@ -87,6 +110,7 @@ def get_supplier_information_rfi_service(freetext1:None , country:None, page_num
         payload_dict["skip"] = page_number
         payload_dict["searchMode"] = "all"
         # call azuresearch api with payload
+        print(payload_dict)
         data = hit_azuresearch_api(payload_dict)
         response_dict = json.loads(data)
         total_record = response_dict["@odata.count"]
