@@ -7,10 +7,9 @@ from dotenv import load_dotenv
 import spacy
 
 from fastapi.logger import logger
-from ..config.logger_config import get_uvicorn_logger,get_gunicorn_logger
+from ..config.logger_config import get_logger
 
-
-logger = get_gunicorn_logger()
+logger = get_logger()
 load_dotenv()
 nlp = spacy.load('en_core_web_sm')
 
