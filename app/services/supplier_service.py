@@ -645,6 +645,8 @@ def get_datetime_attr(pandas_dff,username):
     pandas_dff['updated_by']=username
     return pandas_dff
 
+
+
 def get_filter_sql_query(schema_name,table_name,data_dataframe):
     data_dataframe_dict=data_dataframe.to_dict(orient='records')
     sql_query=f'''select id from {schema_name}.{table_name} '''
@@ -657,7 +659,7 @@ def get_filter_sql_query(schema_name,table_name,data_dataframe):
                     filter_query+=' and '
                 else:
                     filter_query+=' where '
-                filter_query+=f" {key}='{dictt[key]}' "
+                filter_query+=f" {key}='{remove_single_code(dictt[key])}' "
     sql_query+=filter_query+' ;'
     if filter_query!='':
         return sql_query
@@ -676,15 +678,21 @@ def update_supplier_update_date(supplier_id,new_dbobj,schema_name):
 
     
 def get_normalized_id(new_dbobj,table_name,schema_name,data_dataframe,username):
-    mapping = {country.name.lower().strip(): country.alpha_2 for country in pycountry.countries}
-    sql_query = get_filter_sql_query(schema_name,table_name,data_dataframe)
-    data_dataframe = get_datetime_attr(data_dataframe,username)
-    sql_data = new_dbobj.read_table(sql_query)
-    if len(sql_data)==0:
-        soft_delete_function(new_dbobj,table_name,schema_name,data_dataframe)
-        new_dbobj.insert_data(data_dataframe, table_name ,schema_name)
+    try:
+        mapping = {country.name.lower().strip(): country.alpha_2 for country in pycountry.countries}
+        sql_query = get_filter_sql_query(schema_name,table_name,data_dataframe)
+        print(sql_query)
+        data_dataframe = get_datetime_attr(data_dataframe,username)
         sql_data = new_dbobj.read_table(sql_query)
-    return sql_data['id'][0]
+        if len(sql_data)==0:
+            soft_delete_function(new_dbobj,table_name,schema_name,data_dataframe)
+            new_dbobj.insert_data(data_dataframe, table_name ,schema_name)
+            sql_data = new_dbobj.read_table(sql_query)
+        return sql_data['id'][0]
+    except Exception as e:
+        print(e)
+def remove_single_code(strr):
+    return str(strr).replace("'","''")
     
 def insert_suppliers_data_fun(new_dbobj,input_payload):
     try:
@@ -705,6 +713,7 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
             for column in contact_input_df:
                 if column not in ['Pin_Code','Phone','ap_preffered_supplier']:
                     contact_input_df[column]=contact_input_df[column].str.lower()
+                    
             
             if contact_input_df['ap_preffered_supplier'][0]:
                 contact_input_df['ap_preffered_supplier']=contact_input_df.ap_preffered_supplier.map(dict(yes=1, no=0))
