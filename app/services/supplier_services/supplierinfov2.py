@@ -36,7 +36,11 @@ def get_supplier_information_service(freetext1:None , country:None, page_number:
         if (freetext1 == ""):
             freetext1 = "*"
         else:
-            freetext1=clean_main(freetext1)
+            try:
+                freetext1=clean_main(freetext1)
+            except Exception as e:
+                freetext1=freetext1
+                logger.error("clean_main function failed",exc_info=e)
         # if len(country[0])>0:
         if len(country) > 0:
             country_filter = f"Country_Region eq '{country[0].lower()}'"
