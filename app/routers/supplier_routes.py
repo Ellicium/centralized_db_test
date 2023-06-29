@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, Form, Response, APIRouter
 from fastapi.logger import logger
 from dotenv import load_dotenv
 from ..config.db_config import database
-from ..config.logger_config import get_uvicorn_logger,get_gunicorn_logger
+from ..config.logger_config import get_logger
 from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails,UpdateContactDetails,InsertContactDetails, SupplierInfoV2, SupplierInforfi
 from ..services.supplier_service import get_supplier_table_poc,countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun
 
@@ -12,7 +12,7 @@ from ..services.supplier_service import get_supplier_table_poc,countrywise_suppl
 from ..services.supplier_services.supplierinfov2 import get_supplier_information_service, get_supplier_information_rfi_service
 
 
-logger = get_gunicorn_logger()
+logger = get_logger()
 load_dotenv()
 
 router = APIRouter()
