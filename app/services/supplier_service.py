@@ -692,6 +692,22 @@ def get_normalized_id(new_dbobj,table_name,schema_name,data_dataframe,username):
         print(e)
 def remove_single_code(strr):
     return str(strr).replace("'","''")
+
+
+def get_reason(supplier_name,Country,level_1,Email):
+    try:
+        text='Please enter'
+        if not supplier_name:
+            text+=' Supplier Name'
+        if not Country:
+            text+=' Country'
+        if not level_1:
+            text+=' Supplier Category'
+        if not Email:
+            text+=' Email'
+        return text
+    except Exception as e:
+        logger.error('get_reason function failed')
     
 def insert_suppliers_data_fun(new_dbobj,input_payload):
     try:
@@ -702,136 +718,189 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
         contact_input_df_copy=contact_input_df.copy()
 
         supplier_id_list=[]
+        inserted_data=[]
+        contact_input_df_copy=contact_input_df_copy.replace('',None)
+        contact_input_df_invalid_rows=contact_input_df_copy[(contact_input_df_copy['supplier_name'].isna())|(contact_input_df_copy['Country'].isna())|(contact_input_df_copy['level_1'].isna())|(contact_input_df_copy['Email'].isna())]
 
+        contact_input_df_invalid_rows['Reason']= contact_input_df_invalid_rows.apply(lambda x: get_reason(x.supplier_name, x.Country, x.level_1, x.Email), axis=1)
+
+        contact_input_df_copy=contact_input_df_copy.dropna(subset=['supplier_name','Country','level_1','Email','user'], how='any')
+
+        print('contact_input_df_copy',contact_input_df_copy)
+
+        non_accepted_supplier_list=[]
         for df_len_itr in range(len(contact_input_df_copy)):
-            contact_input_df=contact_input_df_copy[df_len_itr:df_len_itr+1].reset_index().drop(['index'], axis=1)
-            print(contact_input_df)
+            non_accepted_supplier=None
+            all_data_not_accepted_record=None
+            supplier_id=None
+            try:
+                start_transaction_query=f''' begin transaction python_mass_upload_api;'''
+                new_dbobj.execute_query(start_transaction_query)
 
-            username=contact_input_df['user'][0]
+                contact_input_df=contact_input_df_copy[df_len_itr:df_len_itr+1].reset_index().drop(['index'], axis=1)
+                print(contact_input_df)
 
-            for column in contact_input_df:
-                if column not in ['Pin_Code','Phone','ap_preffered_supplier']:
-                    contact_input_df[column]=contact_input_df[column].str.lower()
-                    
-            
-            if contact_input_df['ap_preffered_supplier'][0]:
-                contact_input_df['ap_preffered_supplier']=contact_input_df.ap_preffered_supplier.map(dict(yes=1, no=0))
+                all_data_not_accepted_record=contact_input_df.to_dict(orient='records')
 
-            for column in contact_input_df.columns:
-                if not  contact_input_df[column][0]:
-                    contact_input_df=contact_input_df.drop([column], axis=1)
-            
-            supplier_df=contact_input_df[['supplier_name']].rename(columns = {'supplier_name':'name'})#add supplier extra cols
+                username=contact_input_df['user'][0]
 
-            if 'ap_preffered_supplier' in contact_input_df.columns:
-                supplier_df=contact_input_df[['supplier_name','ap_preffered_supplier']].rename(columns = {'supplier_name':'name','ap_preffered_supplier':'ap_preferred'})#add supplier extra cols
-            
+                for column in contact_input_df:
+                    if column not in ['Pin_Code','Phone','ap_preffered_supplier']:
+                        contact_input_df[column]=contact_input_df[column].str.lower()
+                        
+                if 'ap_preffered_supplier' in contact_input_df.columns:
+                    if contact_input_df['ap_preffered_supplier'][0]:
+                        contact_input_df['ap_preffered_supplier']=contact_input_df.ap_preffered_supplier.map(dict(yes=1, no=0))
 
-            supplier_id_received = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df,username)
-            contact_input_df['supplier_id']=supplier_id_received
-            supplier_id_list.append(int(supplier_id_received))
-            
-            if 'City' in contact_input_df.columns:
-                city_df = contact_input_df[['City']]
-                city_id = get_normalized_id(new_dbobj,'dim_city',sqlSchemaName,city_df,username)
-                contact_input_df['city_id'] = city_id
-            
-            if 'State' in contact_input_df.columns:
-                state_df = contact_input_df[['State']]
-                state_id = get_normalized_id(new_dbobj,'dim_state',sqlSchemaName,state_df,username)
-                contact_input_df['state_id'] = state_id
+                for column in contact_input_df.columns:
+                    if not  contact_input_df[column][0]:
+                        contact_input_df=contact_input_df.drop([column], axis=1)
+                
+                supplier_df=contact_input_df[['supplier_name']].rename(columns = {'supplier_name':'name'})#add supplier extra cols
 
-            country_df = contact_input_df[['Country']].rename(columns = {'country_code':'iso2'})
-            country_id = get_normalized_id(new_dbobj,'dim_country',sqlSchemaName,country_df,username)
+                non_accepted_supplier=supplier_df['name'][0]
 
-            
-            
-            contact_input_df['country_id'] = country_id
-            # contact_input_df.rename(columns = {'Pin_Code':'pincode'}, inplace = True)
-            address_df_all_cols=['address',  'city_id', 'state_id', 'country_id']
-            
-            address_df_available_cols=[]
-            for column in address_df_all_cols:
-                if column in contact_input_df.columns:
-                    address_df_available_cols.append(column)
+                if 'ap_preffered_supplier' in contact_input_df.columns:
+                    supplier_df=contact_input_df[['supplier_name','ap_preffered_supplier']].rename(columns = {'supplier_name':'name','ap_preffered_supplier':'ap_preferred'})#add supplier extra cols
+                
 
-            database_insert_df=contact_input_df[address_df_available_cols]
+                supplier_id_received = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df,username)
+                contact_input_df['supplier_id']=supplier_id_received
+                
+                if 'City' in contact_input_df.columns:
+                    city_df = contact_input_df[['City']]
+                    city_id = get_normalized_id(new_dbobj,'dim_city',sqlSchemaName,city_df,username)
+                    contact_input_df['city_id'] = city_id
+                
+                if 'State' in contact_input_df.columns:
+                    state_df = contact_input_df[['State']]
+                    state_id = get_normalized_id(new_dbobj,'dim_state',sqlSchemaName,state_df,username)
+                    contact_input_df['state_id'] = state_id
 
-            print('address_df_available_cols :',address_df_available_cols)
-            address_id=get_normalized_id(new_dbobj,'dim_address',sqlSchemaName,database_insert_df,username)
-            address_supplier_mapping=contact_input_df[['supplier_id']]
-            address_supplier_mapping['address_id']=address_id
-            address_supplier_mapping_id = get_normalized_id(new_dbobj,'address_supplier_mapping',sqlSchemaName,address_supplier_mapping,username)
+                country_df = contact_input_df[['Country']].rename(columns = {'country_code':'iso2'})
+                country_id = get_normalized_id(new_dbobj,'dim_country',sqlSchemaName,country_df,username)
+                
+                contact_input_df['country_id'] = country_id
+                # contact_input_df.rename(columns = {'Pin_Code':'pincode'}, inplace = True)
+                address_df_all_cols=['address',  'city_id', 'state_id', 'country_id']
+                
+                address_df_available_cols=[]
+                for column in address_df_all_cols:
+                    if column in contact_input_df.columns:
+                        address_df_available_cols.append(column)
 
-            update_supplier_update_date(address_supplier_mapping['supplier_id'][0],new_dbobj,sqlSchemaName)
-            
-            available_column_contact=[]
-            all_cols_contact=['Email', 'Phone', 'website','supplier_id','key_contact_name','person_role']
-            for column in all_cols_contact:
-                if column in contact_input_df.columns:
-                    available_column_contact.append(column)
+                database_insert_df=contact_input_df[address_df_available_cols]
+
+                print('address_df_available_cols :',address_df_available_cols)
+                address_id=get_normalized_id(new_dbobj,'dim_address',sqlSchemaName,database_insert_df,username)
+                address_supplier_mapping=contact_input_df[['supplier_id']]
+                address_supplier_mapping['address_id']=address_id
+                address_supplier_mapping_id = get_normalized_id(new_dbobj,'address_supplier_mapping',sqlSchemaName,address_supplier_mapping,username)
+
+                update_supplier_update_date(address_supplier_mapping['supplier_id'][0],new_dbobj,sqlSchemaName)
+
+                logger.info('successfully address data inserted for '+str(non_accepted_supplier))
+                
+                available_column_contact=[]
+                all_cols_contact=['Email', 'Phone', 'website','supplier_id','key_contact_name','person_role']
+                for column in all_cols_contact:
+                    if column in contact_input_df.columns:
+                        available_column_contact.append(column)
+
+                contact_df = contact_input_df[available_column_contact]
+                contact_df.rename(columns = {'Email':'email','Phone':'phone'}, inplace = True)
+                contact_df['address_supplier_mapping_id']=address_supplier_mapping_id
+
+                contact_id = get_normalized_id(new_dbobj,'dim_contact',sqlSchemaName,contact_df,username)
+                update_supplier_update_date(contact_df['supplier_id'][0],new_dbobj,sqlSchemaName)
+
+                logger.info('successfully contact data inserted for '+str(non_accepted_supplier))
+
+                contact_input_df['address_supplier_mapping_id']=address_supplier_mapping_id
+
+                supplier_info_df_columns=[]
+                supplier_info_df_all_columns=['supplier_capability','supplier_additional_info','supplier_id','address_supplier_mapping_id']
+                for column in supplier_info_df_all_columns:
+                    if column in contact_input_df.columns:
+                        supplier_info_df_columns.append(column)
+
+                supplier_info_df=contact_input_df[supplier_info_df_columns]
+                supplier_info_id = get_normalized_id(new_dbobj,'dim_supplier_info',sqlSchemaName,supplier_info_df,username)
+                update_supplier_update_date(supplier_info_df['supplier_id'][0],new_dbobj,sqlSchemaName)
+                
+                logger.info('successfully supplier info data inserted for '+str(non_accepted_supplier))
+
+                if 'level_1' in contact_input_df.columns:
+                    level_1_df=contact_input_df[['level_1']].rename(columns = {'level_1':'name'})
+                    level_1_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_1_df,username)
+                
+                if 'level_2' in contact_input_df.columns:
+                    level_2_df=contact_input_df[['level_2']].rename(columns = {'level_2':'name'})
+                    level_2_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_2_df,username)
+
+                if 'level_3' in contact_input_df.columns:
+                    level_3_df=contact_input_df[['level_3']].rename(columns = {'level_3':'name'})
+                    level_3_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_3_df,username)
+
+                if 'level_1' in contact_input_df.columns:
+                    contact_input_df['level_1_category_id']=level_1_id
+                if 'level_2' in contact_input_df.columns:
+                    contact_input_df['level_2_category_id']=level_2_id
+                if 'level_3' in contact_input_df.columns:
+                    contact_input_df['level_3_category_id']=level_3_id
+
+                category_level_df_all_columns=['level_3_category_id','level_2_category_id','level_1_category_id']
+
+                category_level_df_columns=[]
+                for each_col in category_level_df_all_columns:
+                    if each_col in contact_input_df.columns:
+                        category_level_df_columns.append(each_col)
+
+                category_level_df=contact_input_df[category_level_df_columns]
+                category_level_id=get_normalized_id(new_dbobj,'dim_category_level',sqlSchemaName,category_level_df,username)
+                contact_input_df['category_level_id']=category_level_id
+
+                category_supplier_mapping_df=contact_input_df[['supplier_id','address_supplier_mapping_id','category_level_id']]
+                category_supplier_mapping_id=get_normalized_id(new_dbobj,'category_supplier_mapping',sqlSchemaName,category_supplier_mapping_df,username)
+                update_supplier_update_date(category_supplier_mapping_df['supplier_id'][0],new_dbobj,sqlSchemaName)
+
+                logger.info('successfully category data inserted for '+str(non_accepted_supplier))
+                supplier_id_list.append(int(supplier_id_received))
+
+                supplier_id=int(supplier_id_received)
+
+                commit_transaction_query=f''' commit;'''
+                new_dbobj.execute_query(commit_transaction_query)
+
+                print('successfully executed')
+                
+                all_data_not_accepted_record[0]['supplier_id']=int(supplier_id_received)
+                logger.info('successfully all data inserted for '+str(non_accepted_supplier))
+            except Exception as e:
+                print(e)
+
+                rollback_transaction_query=f''' rollback;'''
+                new_dbobj.execute_query(rollback_transaction_query)
+                
+                # if non_accepted_supplier:
+                #     non_accepted_supplier_list.append(all_data_not_accepted_record[0])
 
 
-            contact_df = contact_input_df[available_column_contact]
-            contact_df.rename(columns = {'Email':'email','Phone':'phone'}, inplace = True)
-            contact_df['address_supplier_mapping_id']=address_supplier_mapping_id
+            if 'supplier_id' in all_data_not_accepted_record[0]:
+                inserted_data.append(all_data_not_accepted_record[0])
 
-            contact_id = get_normalized_id(new_dbobj,'dim_contact',sqlSchemaName,contact_df,username)
-            update_supplier_update_date(contact_df['supplier_id'][0],new_dbobj,sqlSchemaName)
-
-            contact_input_df['address_supplier_mapping_id']=address_supplier_mapping_id
-
-            supplier_info_df_columns=[]
-            supplier_info_df_all_columns=['supplier_capability','supplier_additional_info','supplier_id','address_supplier_mapping_id']
-            for column in supplier_info_df_all_columns:
-                if column in contact_input_df.columns:
-                    supplier_info_df_columns.append(column)
-
-            supplier_info_df=contact_input_df[supplier_info_df_columns]
-            supplier_info_id = get_normalized_id(new_dbobj,'dim_supplier_info',sqlSchemaName,supplier_info_df,username)
-            update_supplier_update_date(supplier_info_df['supplier_id'][0],new_dbobj,sqlSchemaName)
-            
-
-            if 'level_1' in contact_input_df.columns:
-                level_1_df=contact_input_df[['level_1']].rename(columns = {'level_1':'name'})
-                level_1_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_1_df,username)
-            
-            if 'level_2' in contact_input_df.columns:
-                level_2_df=contact_input_df[['level_2']].rename(columns = {'level_2':'name'})
-                level_2_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_2_df,username)
-
-            if 'level_3' in contact_input_df.columns:
-                level_3_df=contact_input_df[['level_3']].rename(columns = {'level_3':'name'})
-                level_3_id=get_normalized_id(new_dbobj,'dim_category',sqlSchemaName,level_3_df,username)
-
-            if 'level_1' in contact_input_df.columns:
-                contact_input_df['level_1_category_id']=level_1_id
-            if 'level_2' in contact_input_df.columns:
-                contact_input_df['level_2_category_id']=level_2_id
-            if 'level_3' in contact_input_df.columns:
-                contact_input_df['level_3_category_id']=level_3_id
-
-            category_level_df_all_columns=['level_3_category_id','level_2_category_id','level_1_category_id']
-
-            category_level_df_columns=[]
-            for each_col in category_level_df_all_columns:
-                if each_col in contact_input_df.columns:
-                    category_level_df_columns.append(each_col)
-
-            category_level_df=contact_input_df[category_level_df_columns]
-            category_level_id=get_normalized_id(new_dbobj,'dim_category_level',sqlSchemaName,category_level_df,username)
-            contact_input_df['category_level_id']=category_level_id
-
-            category_supplier_mapping_df=contact_input_df[['supplier_id','address_supplier_mapping_id','category_level_id']]
-            category_supplier_mapping_id=get_normalized_id(new_dbobj,'category_supplier_mapping',sqlSchemaName,category_supplier_mapping_df,username)
-            update_supplier_update_date(category_supplier_mapping_df['supplier_id'][0],new_dbobj,sqlSchemaName)
-            
             update_sp_id_query=f'''UPDATE {sqlSchemaName}.dim_supplier 
 set ap_supplier_id  = 'AP'+RIGHT('0000000' + CAST(id AS VARCHAR(9)), 7)
 where ap_supplier_id   is null'''
+            
             new_dbobj.execute_query(update_sp_id_query)
 
-        return supplier_id_list
+        return_dict={}
+        return_dict['inserted_data']=inserted_data
+        return_dict['non_inserted_data']=contact_input_df_invalid_rows.to_dict(orient='records')
+        
+        print(return_dict)
+        return return_dict
     except Exception as e:
         print(e)
         return 0
