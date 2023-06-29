@@ -1,5 +1,9 @@
+import os
 import logging
+from dotenv import load_dotenv
 from fastapi.logger import logger
+
+load_dotenv()
 
 def get_gunicorn_logger():
     gunicorn_logger = logging.getLogger('gunicorn.error')
@@ -13,3 +17,14 @@ def get_uvicorn_logger():
     uvicorn_logger.propagate = False
     logger = logging.getLogger(__name__)
     return logger
+
+
+def get_logger():
+    web_server = os.getenv("webServer")
+    print(f"webServer:{web_server}")
+    if web_server == "gunicorn":
+        logger = get_gunicorn_logger()
+    elif web_server == "uvicorn":
+        logger = get_uvicorn_logger()
+    return logger
+    
