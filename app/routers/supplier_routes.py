@@ -1,12 +1,12 @@
 import os
 import logging
-from fastapi import FastAPI, Request, Form, Response, APIRouter
+from fastapi import FastAPI, Request, Form, Response, APIRouter,BackgroundTasks
 from fastapi.logger import logger
 from dotenv import load_dotenv
 from ..config.db_config import database
 from ..config.logger_config import get_logger
 from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails,UpdateContactDetails,InsertContactDetails, SupplierInfoV2, SupplierInforfi
-from ..services.supplier_service import get_supplier_table_poc,countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun
+from ..services.supplier_service import get_supplier_table_poc,countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun,insert_suppliers_data_fun_background_task
 
 # v2
 from ..services.supplier_services.supplierinfov2 import get_supplier_information_service, get_supplier_information_rfi_service
@@ -79,10 +79,11 @@ async def search_suppliers_get_unique_country():
         return None
     
 @router.post("/suppliers/set-supplier-details")
-async def insert_suppliers_info(apipostschema:UpdateSupplierDetails):
+async def insert_suppliers_info(apipostschema:UpdateSupplierDetails, background_tasks: BackgroundTasks):
     try:
         dbobj=database()
         print(apipostschema.input_payload,type(apipostschema.input_payload))
+        background_tasks.add_task(insert_suppliers_data_fun_background_task, dbobj,apipostschema.input_payload)
         response=insert_suppliers_data_fun(dbobj,apipostschema.input_payload)
         if response==0:
             return 'API failed because of invalid data'

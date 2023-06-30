@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import spacy
 
 from fastapi.logger import logger
+
 from ..config.logger_config import get_logger
 
 logger = get_logger()
@@ -715,6 +716,85 @@ def insert_suppliers_data_fun(new_dbobj,input_payload):
         input_payload_list=input_payload
 
         contact_input_df=pd.DataFrame.from_dict(input_payload_list)
+        contact_input_df_copy=contact_input_df.copy()
+
+        supplier_id_list=[]
+        inserted_data=[]
+        return_dict={}
+        
+        contact_input_df_copy=contact_input_df_copy.replace('',None)
+        contact_input_df_invalid_rows=contact_input_df_copy[(contact_input_df_copy['supplier_name'].isna())|(contact_input_df_copy['Country'].isna())|(contact_input_df_copy['level_1'].isna())|(contact_input_df_copy['Email'].isna())]
+
+        contact_input_df_invalid_rows['Reason']= contact_input_df_invalid_rows.apply(lambda x: get_reason(x.supplier_name, x.Country, x.level_1, x.Email), axis=1)
+
+        contact_input_df_copy=contact_input_df_copy.dropna(subset=['supplier_name','Country','level_1','Email','user'], how='any')
+
+        print('contact_input_df_copy_before_background_task',contact_input_df_copy)
+
+        non_accepted_supplier_list=[]
+        for df_len_itr in range(len(contact_input_df_copy)):
+            non_accepted_supplier=None
+            all_data_not_accepted_record=None
+            supplier_id=None
+            try:
+                contact_input_df=contact_input_df_copy[df_len_itr:df_len_itr+1].reset_index().drop(['index'], axis=1)
+                print(contact_input_df)
+
+                username=contact_input_df['user'][0]
+
+                for column in contact_input_df:
+                    if column not in ['Pin_Code','Phone','ap_preffered_supplier']:
+                        contact_input_df[column]=contact_input_df[column].str.lower()
+                        
+                if 'ap_preffered_supplier' in contact_input_df.columns:
+                    if contact_input_df['ap_preffered_supplier'][0]:
+                        contact_input_df['ap_preffered_supplier']=contact_input_df.ap_preffered_supplier.map(dict(yes=1, no=0))
+
+                for column in contact_input_df.columns:
+                    if not  contact_input_df[column][0]:
+                        contact_input_df=contact_input_df.drop([column], axis=1)
+                
+                supplier_df=contact_input_df[['supplier_name']].rename(columns = {'supplier_name':'name'})#add supplier extra cols
+
+                non_accepted_supplier=supplier_df['name'][0]
+
+                if 'ap_preffered_supplier' in contact_input_df.columns:
+                    supplier_df=contact_input_df[['supplier_name','ap_preffered_supplier']].rename(columns = {'supplier_name':'name','ap_preffered_supplier':'ap_preferred'})#add supplier extra cols
+                
+
+                supplier_id_received = get_normalized_id(new_dbobj,'dim_supplier',sqlSchemaName,supplier_df,username)
+                contact_input_df['supplier_id']=supplier_id_received
+
+                print('supplier data inserted before background task')
+
+                supplier_id_list.append(int(supplier_id_received))
+            except Exception as e:
+                print(e)
+                logger.error('error while inserted data in dim_suppliers')
+        
+        return_dict['non_inserted_data']=None
+
+
+        if not contact_input_df_invalid_rows.empty:
+            return_dict['non_inserted_data']=contact_input_df_invalid_rows.to_dict(orient='records')
+        return_dict['inserted_data_suppliers_id']=supplier_id_list
+        
+        print('API executed ',return_dict) 
+        return return_dict
+
+    except Exception as e:
+        print(e)
+        logger.info("Error in insert_suppliers_data_fun")
+        
+
+def insert_suppliers_data_fun_background_task(new_dbobj,input_payload):
+    try:
+        print('inside background task')
+        set_env_var()
+        input_payload_list=input_payload
+
+        contact_input_df=pd.DataFrame.from_dict(input_payload_list)
+        print('contact_input_df_check',contact_input_df)
         contact_input_df_copy=contact_input_df.copy()
 
         supplier_id_list=[]
