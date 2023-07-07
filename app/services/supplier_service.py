@@ -6,6 +6,10 @@ from time import time
 from dotenv import load_dotenv
 import spacy
 
+import json
+import openai
+
+
 from fastapi.logger import logger
 
 from ..config.logger_config import get_logger
@@ -1122,20 +1126,58 @@ def loc_industry_standardisation(country_,industry_names):
 
 
 
-def clean_main(text):
-    # Check if user input are valid
-    # text=spell_check_input(text)
-    country_=extract_entities(text)
-    print(country_)
-    if len(country_)==0:
-        country_=[None]
-        result=text
-    else:
-        result = remove_substrings(text, country_)
-    industry_names=find_industry_in_text(result)
-    print(country_,industry_names)
-    user_input_data=loc_industry_standardisation(country_,industry_names)
-    return user_input_data['industry'][0]
+# def clean_main(text):
+#     # Check if user input are valid
+#     # text=spell_check_input(text)
+#     country_=extract_entities(text)
+#     print(country_)
+#     if len(country_)==0:
+#         country_=[None]
+#         result=text
+#     else:
+#         result = remove_substrings(text, country_)
+#     industry_names=find_industry_in_text(result)
+#     print(country_,industry_names)
+#     user_input_data=loc_industry_standardisation(country_,industry_names)
+#     return user_input_data['industry'][0]
+
+
+def clean_main(prompt):
+    openai.api_type = "azure"
+    openai.api_base = "https://apusegtodvoai01.openai.azure.com/"
+    openai.api_version = "2023-03-15-preview"
+    openai.api_key = "150fcc2ddf1e41d5bb97e9adb7beda54"
+    response = openai.ChatCompletion.create(
+        engine="deploymentr-gpt-35-turbo",
+        messages = [{'role':'user','content':f'''text: '{prompt}'
+                                                industry: identify the industry or product or component-specific word in the text in json format 
+                                                country: identify the country name from the text in json format
+                                                output value for just these keys which are industry and country
+                                                give me unique dictionary
+                                                '''}],
+        temperature=0.7,
+        max_tokens=30,
+        top_p=0.95,
+        frequency_penalty=0,
+        presence_penalty=0,
+        stop=None)
+    logger.info('Chat gpt complete')
+    chat_gpt_op = response['choices'][0]['message']["content"]    
+    # print([chat_gpt_op])
+    # Load JSON data into a dictionary
+    json_op = json.loads(chat_gpt_op)
+    # print(json_op)
+    df = pd.DataFrame.from_dict(json_op, orient='index')
+    df=df.reset_index()
+    # print(df.columns)
+    df = df.transpose()
+    df.columns = df.iloc[0]
+    df = df[1:]
+    return df['industry'][0]
+
+
+
+
 
 def update_contact_info_fun(new_dbobj,contact_df):
     
