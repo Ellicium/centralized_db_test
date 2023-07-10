@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from ..config.db_config import database
 from ..config.logger_config import get_logger
 from ..schemas.supplier_schema import SupplierCountPost,SupplierInfoCountry, SupplierCountResponse,FilterResponse,SupplierInfo ,SupplierInfoResponse,SupplierCategoryWise,SupplierDetails,UpdateSupplierDetails,allSupplierDetails,UpdateContactDetails,InsertContactDetails, SupplierInfoV2, SupplierInforfi
-from ..services.supplier_service import get_supplier_table_poc,countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun,insert_suppliers_data_fun_background_task
+from ..services.supplier_service import get_supplier_table_poc,countrywise_supplier_count, get_categorywise_count, return_null_if_none_category,get_filters, search_suppliers_get_suppliers_information,supplier_details_api,get_unique_country,insert_suppliers_data_fun,get_all_suppliers_data_fun,update_suppliers_contact_fun,insert_suppliers_contact_fun,insert_suppliers_data_fun_background_task,insert_suppliers_contact_fun,insert_suppliers_data_fun_background_task_2,insert_suppliers_data_fun_2
 
 # v2
 from ..services.supplier_services.supplierinfov2 import get_supplier_information_service, get_supplier_information_rfi_service
@@ -163,3 +163,21 @@ async def get_supplier_table_router_poc():
     except Exception as e:
         print(e)
         logger.error("get_supplier_infov2 failed",exc_info=e)
+
+
+
+    
+@router.post("/suppliers/set-supplier-details_2")
+async def insert_suppliers_info_2(apipostschema:UpdateSupplierDetails, background_tasks: BackgroundTasks):
+    try:
+        dbobj=database()
+        print(apipostschema.input_payload,type(apipostschema.input_payload))
+        background_tasks.add_task(insert_suppliers_data_fun_background_task_2, dbobj,apipostschema.input_payload)
+        response=insert_suppliers_data_fun_2(dbobj,apipostschema.input_payload)
+        if response==0:
+            return 'API failed because of invalid data'
+        return response
+    except Exception as e:
+        logger.error(e)
+        print(e)
+        return None
