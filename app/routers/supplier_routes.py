@@ -56,7 +56,7 @@ async def search_suppliers_get_suppliers_information_api_fun(apipostschema:Suppl
         print(e)
         return None
 
-
+    
 @router.post("/suppliers/get-supplier-details")
 async def search_suppliers_get_supplier_details_api_fun(apipostschema:SupplierDetails):
     try:

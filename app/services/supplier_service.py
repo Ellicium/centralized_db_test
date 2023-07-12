@@ -296,7 +296,6 @@ def supplier_details_api(new_dbobj,supplier_id,supplier_name):
         # q2.id = q3.id
         # ;
         # '''
-
         sql_query_for_data_for_supplier_id = f'''select ds.id,ds.name as Supplier_Name,ds.ap_supplier_id,dc1.name as Level_1 ,dc2.name as Level_2,dc3.name as Level_3,dsi.supplier_additional_info as Supplier_Additional_Info,dsi.supplier_capability as Supplier_Capability,
 dc.country  as Country_Region,da.address as Address,dct.email as Email,dct.website as Website,dct.phone as Phone,dct.key_contact_name
 from 
@@ -333,6 +332,7 @@ on dct.supplier_id=ds.id and dct.address_supplier_mapping_id=asm.id
         logger.error(e)
         print(e)
         return None
+    
     
 
 def get_unique_country(new_dbobj):
