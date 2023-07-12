@@ -16,7 +16,7 @@ from ..config.logger_config import get_logger
 
 logger = get_logger()
 load_dotenv()
-nlp = spacy.load('en_core_web_sm')
+nlp = spacy.load('en_core_web_lg')
 
 
 def set_env_var():
@@ -1209,66 +1209,118 @@ def find_industry_in_text(result):
 def loc_industry_standardisation(country_,industry_names):
     user_input_industry_data=pd.DataFrame()
     user_input_country_data=pd.DataFrame()
-    user_input_industry_data['industry']=industry_names
-    user_input_industry_data=user_input_industry_data.sort_values(by=['industry'])
-    user_input_country_data['country']=country_
-    user_input_country_data=user_input_country_data.sort_values(by=['country'])
-    user_input_industry_data['key'] = 1
-    user_input_country_data['key'] = 1
-    user_input_data = pd.merge(user_input_industry_data, user_input_country_data, on='key').drop('key', axis=1)   
-    print(user_input_data)
-    return user_input_data
+    if len(industry_names)!=0:
+        
+        user_input_industry_data['industry']=industry_names
+        user_input_industry_data=user_input_industry_data.sort_values(by=['industry'])
+        user_input_country_data['country']=country_
+        user_input_country_data=user_input_country_data.sort_values(by=['country'])
+        user_input_industry_data['key'] = 1
+        user_input_country_data['key'] = 1
+        user_input_data = pd.merge(user_input_industry_data, user_input_country_data, on='key').drop('key', axis=1)   
+
+        print(user_input_data)
+        return user_input_data
+    else:
+        user_input_country_data['country']=country_
+        user_input_country_data['industry']=None
+        return user_input_country_data
 
 
 
 # def clean_main(text):
-#     # Check if user input are valid
-#     # text=spell_check_input(text)
-#     country_=extract_entities(text)
-#     print(country_)
-#     if len(country_)==0:
-#         country_=[None]
-#         result=text
-#     else:
-#         result = remove_substrings(text, country_)
-#     industry_names=find_industry_in_text(result)
-#     print(country_,industry_names)
-#     user_input_data=loc_industry_standardisation(country_,industry_names)
-#     return user_input_data['industry'][0]
+def clean_main(text):
+    text=text.upper()
+    # Check if user input are valid
+    # text=spell_check_input(text)
+    country_=extract_entities(text)
+    print(country_)
+    if len(country_)==0:
+        country_=[None]
+        result=text
+    else:
+        result = remove_substrings(text, country_)
+    # print(result)
+    industry_names=find_industry_in_text(result)
+    print(f'''country : {country_}
+          industry : {industry_names}''')
+    user_input_data=loc_industry_standardisation(country_,industry_names)
+    print(user_input_data)
+    return user_input_data['industry'][0]
 
 
-def clean_main(prompt):
-    openai.api_type = "azure"
-    openai.api_base = "https://apusegtodvoai01.openai.azure.com/"
-    openai.api_version = "2023-03-15-preview"
-    openai.api_key = "150fcc2ddf1e41d5bb97e9adb7beda54"
-    response = openai.ChatCompletion.create(
-        engine="deploymentr-gpt-35-turbo",
-        messages = [{'role':'user','content':f'''text: '{prompt}'
-                                                industry: identify the industry or product or component-specific word in the text in json format 
-                                                country: identify the country name from the text in json format
-                                                output value for just these keys which are industry and country
-                                                give me unique dictionary
-                                                '''}],
-        temperature=0.7,
-        max_tokens=30,
-        top_p=0.95,
-        frequency_penalty=0,
-        presence_penalty=0,
-        stop=None)
-    logger.info('Chat gpt complete')
-    chat_gpt_op = response['choices'][0]['message']["content"]    
-    # print([chat_gpt_op])
-    # Load JSON data into a dictionary
-    json_op = json.loads(chat_gpt_op)
-    # print(json_op)
-    df = pd.DataFrame.from_dict(json_op, orient='index')
-    df=df.reset_index()
-    # print(df.columns)
-    df = df.transpose()
-    df.columns = df.iloc[0]
-    df = df[1:]
-    return df['industry'][0]
+# def clean_main(prompt):
+#     # openai.api_type = "azure"
+#     # openai.api_base = "https://apusegtodvoai01.openai.azure.com/"
+#     # openai.api_version = "2023-03-15-preview"
+#     # openai.api_key = "150fcc2ddf1e41d5bb97e9adb7beda54"
+#     # response = openai.ChatCompletion.create(
+#     #     engine="deploymentr-gpt-35-turbo",
+#     #     messages = [{'role':'user','content':f'''text: '{prompt}'
+#     #                                             industry: identify the industry or product or component-specific word in the text in json format 
+#     #                                             country: identify the country name from the text in json format
+#     #                                             output value for just these keys which are industry and country
+#     #                                             give me unique dictionary
+#     #                                             '''}],
+#     #     temperature=0.7,
+#     #     max_tokens=30,
+#     #     top_p=0.95,
+#     #     frequency_penalty=0,
+#     #     presence_penalty=0,
+#     #     stop=None)
+#     # logger.info('Chat gpt complete')
+#     # chat_gpt_op = response['choices'][0]['message']["content"]    
+#     # # print([chat_gpt_op])
+#     # # Load JSON data into a dictionary
+#     # json_op = json.loads(chat_gpt_op)
+#     # # print(json_op)
+#     # df = pd.DataFrame.from_dict(json_op, orient='index')
+#     # df=df.reset_index()
+#     # # print(df.columns)
+#     # df = df.transpose()
+#     # df.columns = df.iloc[0]
+#     # df = df[1:]
+#     # return df['industry'][0]
+#     while True:
+#         openai.api_type = "azure"
+#         azureopenaires = os.getenv("AzureOpenAIResource")
+#         openai.api_base = f"https://{azureopenaires}.openai.azure.com/"
+#         openai.api_version = "2023-03-15-preview"
+#         openai.api_key = os.getenv("AzureOpenAIKey")
+#         response = openai.ChatCompletion.create(
+#         engine="deploymentr-gpt-35-turbo",
+#         messages = [{'role':'user','content':f'''text: '{prompt}'
+#                                                 industry: extract words which are not location related or stop words from the text into single string in json format 
+#                                                 country: extract the country name from the text in json format
+#                                                 output value for just these keys which are industry and country
+#                                                 give me unique dictionary and dont change or modify extracted terms
+#                                                 and dont give me any additional text with output
+                                                
+#                                                 '''}],
+                                                    
+#             temperature=0.7,
+#             max_tokens=30,
+#             top_p=0.95,
+#             frequency_penalty=0,
+#             presence_penalty=0,
+#             stop=None)
+#         logger.info('Chat gpt complete')
+#         chat_gpt_op = response['choices'][0]['message']["content"]    
+#         print(chat_gpt_op)
+#         try :
+#             # Load JSON data into a dictionary
+#             json_op = json.loads(chat_gpt_op)
+#             # print('json conversion',json_op)
+#             df = pd.DataFrame.from_dict(json_op, orient='index')
+#             df=df.reset_index()
+#             # print(df.columns)
+#             df = df.transpose()
+#             df.columns = df.iloc[0]
+#             df = df[1:]
+#             return df['industry'][0]
+#         except Exception as e:
+#             print('exception')
+#             pass
 
 
 
