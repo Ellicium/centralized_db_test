@@ -1139,7 +1139,7 @@ def get_all_suppliers_data_fun(new_dbobj,supplier_id_list):
         # supplier_id=str(int(supplier_id))
         supplier_id=f''' ('{str("','".join(list(supplier_id_list))) }') '''
         
-        sql_query_for_data_for_supplier_id=f'''select ds.id,ds.name as Supplier_Name,ds.ap_supplier_id,dc1.name as level1 ,dc2.name as level2,dc3.name as level3,dsi.supplier_additional_info as Supplier_Additional_Info,dsi.supplier_capability as Supplier_Capability,
+        sql_query_for_data_for_supplier_id=f'''select ds.id as Id,ds.name as Supplier_Name,ds.ap_supplier_id,dc1.name as Level_1 ,dc2.name as Level_2,dc3.name as Level_3,dsi.supplier_additional_info as Supplier_Additional_Info,dsi.supplier_capability as Supplier_Capability,
 dc.country  as Country_Region,da.address as Address,dct.email as Email,dct.website as Website,dct.phone as Phone,dct.key_contact_name
 from 
 (
