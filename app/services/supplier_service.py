@@ -297,8 +297,8 @@ def supplier_details_api(new_dbobj,supplier_id,supplier_name):
         # ;
         # '''
 
-        sql_query_for_data_for_supplier_id = f'''select ds.id,ds.name as Supplier_Name,ds.ap_supplier_id,dc1.name as level1 ,dc2.name as level2,dc3.name as level3,dsi.supplier_additional_info as Supplier_Additional_Info,dsi.supplier_capability as Supplier_Capability,
-dc.country  as Country_Region,da.address as Address,dct.email as Email,dct.website as Website,dct.phone as Phone
+        sql_query_for_data_for_supplier_id = f'''select ds.id,ds.name as Supplier_Name,ds.ap_supplier_id,dc1.name as Level_1 ,dc2.name as Level_2,dc3.name as Level_3,dsi.supplier_additional_info as Supplier_Additional_Info,dsi.supplier_capability as Supplier_Capability,
+dc.country  as Country_Region,da.address as Address,dct.email as Email,dct.website as Website,dct.phone as Phone,dct.key_contact_name
 from 
 (
 select id,name,ap_supplier_id from {schema_name}.dim_supplier
