@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import spacy
 
 import json
-import openai
 
 
 from fastapi.logger import logger
